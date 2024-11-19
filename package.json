@@ -1,0 +1,16 @@
+{
+  "name": "svr",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "source": "./src/index.ts",
+    "import": "./src/index.ts"
+  },
+  "scripts": {
+    "example:basic": "pnpm --filter example-basic dev"
+  },
+  "peerDependencies": {
+    "svelte": "^5.1.3"
+  },
+  "packageManager": "pnpm@9.13.2"
+}
