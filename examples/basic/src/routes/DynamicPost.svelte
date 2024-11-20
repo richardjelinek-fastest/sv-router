@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { params } from "../params.svelte";
+  import { params } from "../App.svelte";
 
+  // @ts-expect-error TODO: typesage params
   const { id } = params();
 </script>
 

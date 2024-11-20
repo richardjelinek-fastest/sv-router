@@ -1,3 +1,3 @@
 <script lang="ts"></script>
 
-<h1>404</h1>
+<h1>About</h1>
