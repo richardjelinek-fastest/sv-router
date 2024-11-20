@@ -1,1 +1,1 @@
-export * from "./router.svelte";
+export * from './router.svelte';

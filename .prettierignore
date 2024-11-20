@@ -1,0 +1,22 @@
+node_modules
+pnpm-lock.yaml
+
+# Output
+.output
+.svelte-kit
+build
+dist
+temp-*
+generated
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

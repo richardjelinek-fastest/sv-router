@@ -1,7 +1,7 @@
 {
-  "extends": ["../../tsconfig.json"],
-  "compilerOptions": {
-    "customConditions": ["source"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+	"extends": ["../../tsconfig.json"],
+	"compilerOptions": {
+		"customConditions": ["source"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.svelte"]
 }
