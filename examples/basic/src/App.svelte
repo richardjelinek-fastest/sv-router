@@ -20,7 +20,7 @@
 		'*': NotFound,
 	});
 
-	export const p = router.typedPath;
+	export const p = router.typedPathFn;
 	export const params = router.params;
 </script>
 

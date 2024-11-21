@@ -61,7 +61,7 @@ export default [
 				'error',
 				{ ignoreRestSiblings: true, argsIgnorePattern: '_' },
 			],
-			'no-console': 'warn',
+			'no-console': ['warn', { allow: ['warn'] }],
 		},
 	},
 	prettier,

@@ -1,5 +1,5 @@
 import type { Component } from 'svelte';
-import type { Routes } from './router.svelte';
+import type { Routes } from '../types';
 
 export function matchRoute(
 	pathname: string,

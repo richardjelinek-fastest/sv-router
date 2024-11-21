@@ -1,11 +1,6 @@
 import { type Component } from 'svelte';
-import { matchRoute } from './match-route';
-
-export type Routes = {
-	[key: `/${string}`]: Component | Routes;
-	'*'?: Component;
-	layout?: Component<any>;
-};
+import { matchRoute } from './helpers/match-route';
+import type { Routes } from './types';
 
 let routes: Routes;
 let routeComponent = $state<Component>();
@@ -14,11 +9,17 @@ let paramsStore = $state({});
 export function createRouter(r: Routes) {
 	routes = r;
 
+	if (import.meta.env.DEV) {
+		import('./helpers/validate-routes').then(({ validateRoutes }) => {
+			validateRoutes(routes);
+		});
+	}
+
 	return {
 		get component() {
 			return routeComponent;
 		},
-		typedPath(path: string) {
+		typedPathFn(path: string) {
 			return path;
 		},
 		params() {

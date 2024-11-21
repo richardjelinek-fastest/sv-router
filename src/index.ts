@@ -1,1 +1,1 @@
-export * from './router.svelte';
+export { createRouter } from './create-router.svelte';
