@@ -57,7 +57,7 @@ importers:
 
   examples/basic:
     dependencies:
-      svr:
+      svelte-path:
         specifier: workspace:*
         version: link:../..
     devDependencies:

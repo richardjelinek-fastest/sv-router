@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { params } from '../App.svelte';
+	import { queryParams } from '../App.svelte';
 
-	// @ts-expect-error TODO: typesage params
-	const { id } = params();
+	// @ts-expect-error TODO: typesafe queryParams
+	const { id } = queryParams();
 </script>
 
 <h1>A post with the slug {id}</h1>

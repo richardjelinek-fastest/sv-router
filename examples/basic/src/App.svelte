@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { createRouter } from 'svr';
+	import { createRouter } from 'svelte-path';
 	import Layout from './Layout.svelte';
 	import About from './routes/About.svelte';
 	import DynamicPost from './routes/DynamicPost.svelte';
@@ -21,7 +21,7 @@
 	});
 
 	export const p = router.typedPathFn;
-	export const params = router.params;
+	export const queryParams = router.queryParams;
 </script>
 
 <script lang="ts">

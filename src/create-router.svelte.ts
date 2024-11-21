@@ -22,7 +22,7 @@ export function createRouter(r: Routes) {
 		typedPathFn(path: string) {
 			return path;
 		},
-		params() {
+		queryParams() {
 			const readonly = $derived(paramsStore);
 			return readonly;
 		},
