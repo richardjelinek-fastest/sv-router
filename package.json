@@ -8,26 +8,26 @@
 		"spa"
 	],
 	"homepage": "https://github.com/colinlienard/svelte-path",
+	"bugs": {
+		"url": "https://github.com/colinlienard/svelte-path/issues"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/colinlienard/svelte-path.git"
 	},
-	"bugs": {
-		"url": "https://github.com/colinlienard/svelte-path/issues"
-	},
-	"files": [
-		"dist"
-	],
 	"license": "MIT",
 	"type": "module",
 	"exports": {
 		".": {
-			"@svelte-path/source": "./src/index.ts",
+			"svelte-path/source": "./src/index.ts",
 			"import": "./dist/index.js",
 			"svelte": "./dist/index.js",
 			"types": "./dist/index.d.ts"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"example:basic": "pnpm --filter basic-example dev",
 		"build": "svelte-package -i src && rm -rf .svelte-kit",
@@ -40,8 +40,8 @@
 		"sherif": "sherif -r root-package-private-field",
 		"sherif:fix": "sherif  -r root-package-private-field --fix"
 	},
-	"peerDependencies": {
-		"svelte": "^5"
+	"dependencies": {
+		"esm-env": "^1.1.4"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.15.0",
@@ -58,6 +58,9 @@
 		"typescript-eslint": "^8.14.0",
 		"vite": "^5.4.10",
 		"vitest": "^2.1.5"
+	},
+	"peerDependencies": {
+		"svelte": "^5"
 	},
 	"packageManager": "pnpm@9.14.2"
 }

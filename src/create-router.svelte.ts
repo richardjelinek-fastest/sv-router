@@ -1,3 +1,4 @@
+import { BROWSER, DEV } from 'esm-env';
 import type { Routes } from './types.ts';
 
 export let routes: Routes;
@@ -6,7 +7,7 @@ export const paramsStore = $state<Record<string, string>>({});
 export function createRouter(r: Routes) {
 	routes = r;
 
-	if (import.meta.env.DEV) {
+	if (DEV && BROWSER) {
 		import('./helpers/validate-routes.ts').then(({ validateRoutes }) => {
 			validateRoutes(routes);
 		});
