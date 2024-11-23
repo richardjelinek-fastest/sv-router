@@ -1,19 +1,19 @@
 import type { Component } from 'svelte';
-import type { Routes } from '../types.ts';
+import type { LayoutComponent, RouteComponent, Routes } from '../types.ts';
 
 export function matchRoute(
 	pathname: string,
 	routes: Routes,
 ): {
-	match: Component | undefined;
-	layouts: Component[];
+	match: RouteComponent | undefined;
+	layouts: LayoutComponent[];
 	params: Record<string, string>;
 } {
 	const pathParts = pathname.split('/');
 	const allRouteParts = sortRoutes(Object.keys(routes)).map((route) => route.split('/'));
 
-	let match: Component | undefined;
-	const layouts: Component[] = [];
+	let match: RouteComponent | undefined;
+	const layouts: LayoutComponent[] = [];
 	let params: Record<string, string> = {};
 
 	outer: for (const routeParts of allRouteParts) {
@@ -27,7 +27,7 @@ export function matchRoute(
 			} else if (routePart !== pathPart) {
 				break;
 			}
-			const routeMatch = routes[routeParts.join('/') as keyof Routes];
+			const routeMatch = routes[routeParts.join('/') as keyof Routes] as RouteComponent | Routes;
 			if (
 				typeof routeMatch !== 'function' &&
 				routeMatch?.layout &&

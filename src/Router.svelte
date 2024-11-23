@@ -3,13 +3,16 @@
 	import { on } from 'svelte/events';
 	import { paramsStore, routes } from './create-router.svelte.ts';
 	import { matchRoute } from './helpers/match-route.ts';
+	import { resolveRouteComponents } from './helpers/utils.ts';
 	import RecursiveComponentTree from './RecursiveComponentTree.svelte';
 
 	let componentTree = $state<Component[]>([]);
 
 	function onNavigate() {
 		const { match, layouts, params } = matchRoute(globalThis.location.pathname, routes);
-		componentTree = match ? [...layouts, match] : layouts;
+		resolveRouteComponents(match ? [...layouts, match] : layouts).then((components) => {
+			componentTree = components;
+		});
 		Object.assign(paramsStore, params);
 	}
 
