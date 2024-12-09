@@ -8,6 +8,7 @@ export function matchRoute(
 	match: RouteComponent | undefined;
 	layouts: LayoutComponent[];
 	params: Record<string, string>;
+	breakFromLayouts: boolean;
 } {
 	// Remove trailing slash
 	if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -17,12 +18,20 @@ export function matchRoute(
 	const allRouteParts = sortRoutes(Object.keys(routes)).map((route) => route.split('/'));
 
 	let match: RouteComponent | undefined;
-	const layouts: LayoutComponent[] = [];
+	let layouts: LayoutComponent[] = [];
 	let params: Record<string, string> = {};
+	let breakFromLayouts = false;
 
 	outer: for (const routeParts of allRouteParts) {
-		for (const [index, routePart] of sortRoutes(routeParts).entries()) {
+		// eslint-disable-next-line prefer-const
+		for (let [index, routePart] of sortRoutes(routeParts).entries()) {
 			const pathPart = pathParts[index];
+
+			breakFromLayouts = routePart.startsWith('(') && routePart.endsWith(')');
+			if (breakFromLayouts) {
+				routePart = routePart.slice(1, -1);
+			}
+
 			if (routePart.startsWith(':')) {
 				params[routePart.slice(1)] = pathPart;
 			} else if (routePart === '*') {
@@ -36,15 +45,11 @@ export function matchRoute(
 				continue;
 			}
 
-			const routeMatch = routes[routeParts.join('/') as keyof Routes] as RouteComponent | Routes;
-
-			if (
-				typeof routeMatch !== 'function' &&
-				routeMatch?.layout &&
-				!layouts.includes(routeMatch.layout)
-			) {
-				layouts.push(routeMatch.layout);
+			if (!breakFromLayouts && 'layout' in routes && routes.layout) {
+				layouts.push(routes.layout);
 			}
+
+			const routeMatch = routes[routeParts.join('/') as keyof Routes] as RouteComponent | Routes;
 
 			if (typeof routeMatch === 'function') {
 				if (routeParts.length === pathParts.length) {
@@ -58,14 +63,18 @@ export function matchRoute(
 				if (result) {
 					match = result.match;
 					params = { ...params, ...result.params };
-					layouts.push(...result.layouts);
+					if (result.breakFromLayouts) {
+						layouts = [];
+					} else {
+						layouts.push(...result.layouts);
+					}
 				}
 			}
 			break outer;
 		}
 	}
 
-	return { match, layouts, params };
+	return { match, layouts, params, breakFromLayouts };
 }
 
 export function sortRoutes(routes: string[]) {
