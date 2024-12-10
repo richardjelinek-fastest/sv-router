@@ -1,5 +1,5 @@
 import type { Equal, Expect } from 'type-testing';
-import type { AllParams, ConstructPathArgs, Path, PathParams, RouteComponent } from './types.ts';
+import type { AllParams, ConstructPathArgs, Path, PathParams, RouteComponent } from './index.d.ts';
 
 type TestRoutes = {
 	'/': RouteComponent;
@@ -8,6 +8,7 @@ type TestRoutes = {
 	'/posts': {
 		'/': RouteComponent;
 		'/static': RouteComponent;
+		'/(nolayout)': RouteComponent;
 		'/:id': {
 			'/': RouteComponent;
 			'/:commentId': RouteComponent;
@@ -25,6 +26,7 @@ type test_path_expected =
 	| '/contact/nested'
 	| '/posts'
 	| '/posts/static'
+	| '/posts/nolayout'
 	| `/posts/:id`
 	| `/posts/:id/:commentId`;
 

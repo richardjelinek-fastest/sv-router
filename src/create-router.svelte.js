@@ -1,14 +1,22 @@
 import { BROWSER, DEV } from 'esm-env';
-import type { Component } from 'svelte';
-import { matchRoute } from './helpers/match-route.ts';
-import { constructPath, resolveRouteComponents } from './helpers/utils.ts';
-import type { AllParams, RouterMethods, Routes } from './types/types.ts';
+import { matchRoute } from './helpers/match-route.js';
+import { constructPath, resolveRouteComponents } from './helpers/utils.js';
 
-export let routes: Routes;
-export const componentTree = $state<Component[]>([]);
-export const paramsStore = $state<Record<string, string>>({});
+/** @type {import('./index.d.ts').Routes} */
+export let routes;
 
-export function createRouter<T extends Routes>(r: T): RouterMethods<T> {
+/** @type {import('svelte').Component[]} */
+export const componentTree = $state([]);
+
+/** @type {Record<string, string>} */
+export const paramsStore = $state({});
+
+/**
+ * @template {import('./index.d.ts').Routes} T
+ * @param {T} r
+ * @returns {import('./index.d.ts').RouterMethods<T>}
+ */
+export function createRouter(r) {
 	routes = r;
 
 	if (DEV && BROWSER) {
@@ -26,7 +34,7 @@ export function createRouter<T extends Routes>(r: T): RouterMethods<T> {
 		},
 		params() {
 			const readonly = $derived(paramsStore);
-			return readonly as AllParams<T>;
+			return readonly;
 		},
 	};
 }
@@ -42,8 +50,9 @@ export function onNavigate() {
 	Object.assign(paramsStore, params);
 }
 
-export function onGlobalClick(event: Event) {
-	const anchor = (event.target as HTMLElement).closest('a');
+/** @param {Event} event */
+export function onGlobalClick(event) {
+	const anchor = /** @type {HTMLElement} */ (event.target).closest('a');
 	if (!anchor) return;
 
 	if (anchor.hasAttribute('target') || anchor.hasAttribute('download')) return;

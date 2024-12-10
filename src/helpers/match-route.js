@@ -1,15 +1,22 @@
-import type { Component } from 'svelte';
-import type { LayoutComponent, RouteComponent, Routes } from '../types/types.ts';
+/**
+ * @typedef {import('../index.d.ts').LayoutComponent} LayoutComponent
+ *
+ * @typedef {import('../index.d.ts').RouteComponent} RouteComponent
+ *
+ * @typedef {import('../index.d.ts').Routes} Routes
+ */
 
-export function matchRoute(
-	pathname: string,
-	routes: Routes,
-): {
-	match: RouteComponent | undefined;
-	layouts: LayoutComponent[];
-	params: Record<string, string>;
-	breakFromLayouts: boolean;
-} {
+/**
+ * @param {string} pathname
+ * @param {Routes} routes
+ * @returns {{
+ * 	match: RouteComponent | undefined;
+ * 	layouts: LayoutComponent[];
+ * 	params: Record<string, string>;
+ * 	breakFromLayouts: boolean;
+ * }}
+ */
+export function matchRoute(pathname, routes) {
 	// Remove trailing slash
 	if (pathname.length > 1 && pathname.endsWith('/')) {
 		pathname = pathname.slice(0, -1);
@@ -17,25 +24,31 @@ export function matchRoute(
 	const pathParts = pathname.split('/');
 	const allRouteParts = sortRoutes(Object.keys(routes)).map((route) => route.split('/'));
 
-	let match: RouteComponent | undefined;
-	let layouts: LayoutComponent[] = [];
-	let params: Record<string, string> = {};
+	/** @type {RouteComponent | undefined} */
+	let match;
+
+	/** @type {LayoutComponent[]} */
+	let layouts = [];
+
+	/** @type {Record<string, string>} */
+	let params = {};
+
 	let breakFromLayouts = false;
 
 	outer: for (const routeParts of allRouteParts) {
-		// eslint-disable-next-line prefer-const
 		for (let [index, routePart] of sortRoutes(routeParts).entries()) {
-			const pathPart = pathParts[index];
-
 			breakFromLayouts = routePart.startsWith('(') && routePart.endsWith(')');
 			if (breakFromLayouts) {
 				routePart = routePart.slice(1, -1);
 			}
 
+			const pathPart = pathParts[index];
 			if (routePart.startsWith(':')) {
 				params[routePart.slice(1)] = pathPart;
 			} else if (routePart === '*') {
-				match = routes[routeParts.join('/') as keyof Routes] as Component;
+				match = /** @type {RouteComponent} */ (
+					routes[/** @type {keyof Routes} */ (routeParts.join('/'))]
+				);
 				break outer;
 			} else if (routePart !== pathPart) {
 				break;
@@ -49,7 +62,9 @@ export function matchRoute(
 				layouts.push(routes.layout);
 			}
 
-			const routeMatch = routes[routeParts.join('/') as keyof Routes] as RouteComponent | Routes;
+			const routeMatch = /** @type {RouteComponent} */ (
+				routes[/** @type {keyof Routes} */ (routeParts.join('/'))]
+			);
 
 			if (typeof routeMatch === 'function') {
 				if (routeParts.length === pathParts.length) {
@@ -77,11 +92,19 @@ export function matchRoute(
 	return { match, layouts, params, breakFromLayouts };
 }
 
-export function sortRoutes(routes: string[]) {
+/**
+ * @param {string[]} routes
+ * @returns {string[]}
+ */
+export function sortRoutes(routes) {
 	return routes.toSorted((a, b) => getRoutePriority(a) - getRoutePriority(b));
 }
 
-function getRoutePriority(route: string): number {
+/**
+ * @param {string} route
+ * @returns {number}
+ */
+function getRoutePriority(route) {
 	if (route === '' || route === '/') return 1;
 	if (route === '*') return 4;
 	if (route.includes(':')) return 3;

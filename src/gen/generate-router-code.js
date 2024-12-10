@@ -1,23 +1,34 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-type FileTree = (string | { name: string; tree: FileTree })[];
+/** @typedef {(string | { name: string; tree: FileTree })[]} FileTree */
 
-type GeneratedRoutes = {
-	[key: string]: string | GeneratedRoutes;
-};
+/**
+ * @typedef {{
+ * 	[key: string]: string | GeneratedRoutes;
+ * }} GeneratedRoutes
+ */
 
 const PARAM_FILENAME_REGEX = /\[(.*)\].svelte/g;
 
-export function generateRouterCode(routesPath: string) {
+/**
+ * @param {string} routesPath
+ * @returns {string}
+ */
+export function generateRouterCode(routesPath) {
 	const fileTree = buildFileTree(path.join(process.cwd(), routesPath));
 	const routeMap = createRouteMap(fileTree);
 	return createRouterCode(routeMap, path.join('..', routesPath));
 }
 
-export function buildFileTree(routesPath: string): FileTree {
+/**
+ * @param {string} routesPath
+ * @returns {FileTree}
+ */
+export function buildFileTree(routesPath) {
 	const entries = fs.readdirSync(routesPath);
-	const result: FileTree = [];
+	/** @type {FileTree} */
+	const result = [];
 	for (const entry of entries) {
 		const stat = fs.lstatSync(path.join(routesPath, entry));
 		if (stat.isDirectory()) {
@@ -29,8 +40,14 @@ export function buildFileTree(routesPath: string): FileTree {
 	return result;
 }
 
-export function createRouteMap(fileTree: FileTree, prefix = ''): GeneratedRoutes {
-	const result: GeneratedRoutes = {};
+/**
+ * @param {FileTree} fileTree
+ * @param {string} prefix
+ * @returns {GeneratedRoutes}
+ */
+export function createRouteMap(fileTree, prefix = '') {
+	/** @type {GeneratedRoutes} */
+	const result = {};
 	for (const entry of fileTree) {
 		if (typeof entry === 'string') {
 			switch (entry) {
@@ -62,7 +79,12 @@ export function createRouteMap(fileTree: FileTree, prefix = ''): GeneratedRoutes
 	return result;
 }
 
-export function createRouterCode(routes: GeneratedRoutes, routesPath: string) {
+/**
+ * @param {GeneratedRoutes} routes
+ * @param {string} routesPath
+ * @returns {string}
+ */
+export function createRouterCode(routes, routesPath) {
 	if (!routesPath.endsWith('/')) {
 		routesPath += '/';
 	}

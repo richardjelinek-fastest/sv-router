@@ -7,8 +7,8 @@ import {
 	ROUTER_PATH,
 	ROUTES_PATH,
 	TSCONFIG_PATH,
-} from '../common.ts';
-import { generateRouterCode } from './generate-router-code.ts';
+} from '../common.js';
+import { generateRouterCode } from './generate-router-code.js';
 
 export function writeRouterCode() {
 	try {
@@ -47,7 +47,11 @@ export function writeRouterCode() {
 	}
 }
 
-function writeFileIfDifferent(filePath: string, content: string) {
+/**
+ * @param {string} filePath
+ * @param {string} content
+ */
+function writeFileIfDifferent(filePath, content) {
 	if (!fs.existsSync(filePath) || fs.readFileSync(filePath, 'utf8') !== content) {
 		fs.writeFileSync(filePath, content);
 	}

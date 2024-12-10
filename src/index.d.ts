@@ -1,5 +1,19 @@
 import type { Component, Snippet } from 'svelte';
 
+/**
+ * Setup a new router instance with the given routes.
+ *
+ * ```js
+ * export const { path, goto, params } = createRouter({
+ *   '/': Home,
+ *   '/about': About,
+ *   ...
+ * });
+ * ```
+ */
+export function createRouter<T extends Routes>(r: T): RouterMethods<T>;
+export const Router: Component;
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type BaseProps = {};
 
@@ -7,7 +21,7 @@ export type LazyRouteComponent<Props extends BaseProps = BaseProps> = () => Prom
 	default: Component<Props>;
 }>;
 
-export type RouteComponent<Props extends BaseProps = BaseProps> =
+export type RouteComponent<Props extends BaseProps = any> =
 	| Component<Props>
 	| LazyRouteComponent<Props>;
 export type LayoutComponent = RouteComponent<{ children: Snippet }>;
@@ -24,7 +38,9 @@ export type RouterMethods<T extends Routes> = {
 	params(): AllParams<T>;
 };
 
-export type Path<T extends Routes> = RemoveLastSlash<RecursiveKeys<StripNonRoutes<T>>>;
+export type Path<T extends Routes> = RemoveParenthesis<
+	RemoveLastSlash<RecursiveKeys<StripNonRoutes<T>>>
+>;
 
 export type ConstructPathArgs<T extends string> =
 	PathParams<T> extends never ? [T] : [T, PathParams<T>];
@@ -49,6 +65,10 @@ type RecursiveKeys<T extends Routes, Prefix extends string = ''> = {
 }[keyof T];
 
 type RemoveLastSlash<T extends string> = T extends '/' ? T : T extends `${infer R}/` ? R : T;
+
+type RemoveParenthesis<T extends string> = T extends `${infer A}(${infer B})${infer C}`
+	? RemoveParenthesis<`${A}${B}${C}`>
+	: T;
 
 type ExtractParams<T extends string> = T extends `${string}:${infer Param}/${infer Rest}`
 	? Param | ExtractParams<`/${Rest}`>

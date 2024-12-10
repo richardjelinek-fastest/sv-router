@@ -16,6 +16,11 @@ export default [
 			globals: {
 				...globals.browser,
 				...globals.node,
+				...globals.jest,
+				$state: false,
+				$derived: false,
+				$props: false,
+				vi: false,
 			},
 		},
 	},

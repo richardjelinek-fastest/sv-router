@@ -1,9 +1,9 @@
 import path from 'node:path';
-import type { Plugin } from 'vite';
-import { GEN_CODE_ALIAS, ROUTER_PATH, ROUTES_PATH } from '../common.ts';
-import { writeRouterCode } from '../gen/write-router-code.ts';
+import { GEN_CODE_ALIAS, ROUTER_PATH, ROUTES_PATH } from '../common.js';
+import { writeRouterCode } from '../gen/write-router-code.js';
 
-export function router(): Plugin {
+/** @returns {import('vite').Plugin} */
+export function router() {
 	return {
 		name: 'sv-router',
 		config(config) {
@@ -19,7 +19,7 @@ export function router(): Plugin {
 			if (Array.isArray(config.resolve.alias)) {
 				config.resolve.alias.push({ find: GEN_CODE_ALIAS, replacement });
 			} else {
-				(config.resolve.alias as Record<string, string>)[GEN_CODE_ALIAS] = replacement;
+				/** @type {Record<string, string>} */ (config.resolve.alias)[GEN_CODE_ALIAS] = replacement;
 			}
 		},
 		buildStart() {
