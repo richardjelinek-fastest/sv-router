@@ -6,16 +6,18 @@ import { constructPath, resolveRouteComponents } from './helpers/utils.js';
 /** @type {import('./index.d.ts').Routes} */
 export let routes;
 
-/** @type {import('svelte').Component[]} */
-export const componentTree = $state([]);
+/** @type {{ value: import('svelte').Component[] }} */
+export let componentTree = $state({ value: [] });
 
-/** @type {Record<string, string>} */
-export const paramsStore = $state({});
+/** @type {{ value: Record<string, string> }} */
+export let params = $state({ value: {} });
+
+let location = $state(updatedLocation());
 
 /**
  * @template {import('./index.d.ts').Routes} T
  * @param {T} r
- * @returns {import('./index.d.ts').RouterMethods<T>}
+ * @returns {import('./index.d.ts').RouterApi<T>}
  */
 export function createRouter(r) {
 	routes = r;
@@ -29,15 +31,41 @@ export function createRouter(r) {
 	preloadOnHover(routes);
 
 	return {
-		path: constructPath,
-		goto(...args) {
-			const path = constructPath(args[0], args[1]);
-			globalThis.history.pushState({}, '', path);
+		p: constructPath,
+		/**
+		 * @param {string} path
+		 * @param {import('./index.d.ts').NavigateOptions & { params?: Record<string, string> }} options
+		 */
+		navigate(path, options = {}) {
+			if (options.params) {
+				path = constructPath(path, options.params);
+			}
+			if (options.search) {
+				path += options.search;
+			}
+			if (options.hash) {
+				path += options.hash;
+			}
+			const historyMethod = options.replace ? 'replaceState' : 'pushState';
+			globalThis.history[historyMethod](options.state || {}, '', path);
 			onNavigate();
 		},
-		params() {
-			const readonly = $derived(paramsStore);
-			return readonly;
+		route: {
+			get params() {
+				return params.value;
+			},
+			get pathname() {
+				return location.pathname;
+			},
+			get search() {
+				return location.search;
+			},
+			get state() {
+				return location.state;
+			},
+			get hash() {
+				return location.hash;
+			},
 		},
 	};
 }
@@ -46,11 +74,12 @@ export function onNavigate() {
 	if (!routes) {
 		throw new Error('Router not initialized: `createRouter` was not called.');
 	}
-	const { match, layouts, params } = matchRoute(globalThis.location.pathname, routes);
+	location = updatedLocation();
+	const { match, layouts, params: newParams } = matchRoute(globalThis.location.pathname, routes);
+	params.value = newParams || {};
 	resolveRouteComponents(match ? [...layouts, match] : layouts).then((components) => {
-		Object.assign(componentTree, components);
+		componentTree.value = components;
 	});
-	Object.assign(paramsStore, params);
 }
 
 /** @param {Event} event */
@@ -65,6 +94,17 @@ export function onGlobalClick(event) {
 	if (url.origin !== currentOrigin) return;
 
 	event.preventDefault();
-	globalThis.history.pushState({}, '', anchor.href);
+	const { replace, state } = anchor.dataset;
+	const historyMethod = replace === undefined || replace === 'false' ? 'pushState' : 'replaceState';
+	globalThis.history[historyMethod](state || {}, '', anchor.href);
 	onNavigate();
+}
+
+function updatedLocation() {
+	return {
+		pathname: globalThis.location.pathname,
+		search: globalThis.location.search,
+		state: globalThis.history.state,
+		hash: globalThis.location.hash,
+	};
 }
