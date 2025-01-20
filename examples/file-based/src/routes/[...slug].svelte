@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { route } from '../router';
+	import { route } from 'sv-router/generated';
 </script>
 
 <h1>404</h1>
