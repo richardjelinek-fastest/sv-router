@@ -2,6 +2,16 @@ import type { Component, Snippet } from 'svelte';
 import type { Action } from 'svelte/action';
 
 /**
+ * A Svelte action that will add a class to the anchor if its `href` matches the current route. It
+ * can have an optional `className` parameter to specify the class to add, otherwise it will default
+ * to `is-active`.
+ *
+ * ```svelte
+ * <a href="/about" use:isActiveLink={{ className: 'active-link' }}>
+ * ```
+ */
+export const isActiveLink: IsActiveLink;
+/**
  * Setup a new router instance with the given routes.
  *
  * ```js
@@ -13,8 +23,13 @@ import type { Action } from 'svelte/action';
  * ```
  */
 export function createRouter<T extends Routes>(r: T): RouterApi<T>;
-export const isActiveLink: IsActiveLink;
+/** The component that will render the current route. */
 export const Router: Component;
+/**
+ * The reactive search params of the URL. It is just a wrapper around `SvelteURLSearchParam` that
+ * will update the url on change.
+ */
+export const searchParams: URLSearchParams;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type BaseProps = {};
