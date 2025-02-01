@@ -64,33 +64,56 @@ function navigate(path, options = {}) {
 	if (options.params) {
 		path = constructPath(path, options.params);
 	}
-	if (options.search) {
-		path += (options.search.startsWith('?') ? '' : '?') + options.search;
+	if (options.search && !options.search.startsWith('?')) {
+		options.search = '?' + options.search;
 	}
-	if (options.hash) {
-		path += options.hash;
+	if (options.hash && !options.hash.startsWith('#')) {
+		options.hash = '#' + options.hash;
 	}
-	const historyMethod = options.replace ? 'replaceState' : 'pushState';
-	globalThis.history[historyMethod](options.state || {}, '', path);
-	onNavigate();
+	onNavigate(path, options);
 }
 navigate.back = () => globalThis.history.back();
 navigate.forward = () => globalThis.history.forward();
 
-export function onNavigate() {
+/**
+ * @param {string} [path]
+ * @param {import('./index.d.ts').NavigateOptions} options
+ */
+export async function onNavigate(path, options = {}) {
 	if (!routes) {
 		throw new Error('Router not initialized: `createRouter` was not called.');
 	}
+	const {
+		match,
+		layouts,
+		hooks,
+		params: newParams,
+	} = matchRoute(path || globalThis.location.pathname, routes);
+
+	for (const { beforeLoad } of hooks) {
+		try {
+			await beforeLoad?.();
+		} catch {
+			return;
+		}
+	}
+
+	componentTree.value = await resolveRouteComponents(match ? [...layouts, match] : layouts);
+	params.value = newParams || {};
+
+	if (path) {
+		if (options.search) path += options.search;
+		if (options.hash) path += options.hash;
+		const historyMethod = options.replace ? 'replaceState' : 'pushState';
+		globalThis.history[historyMethod](options.state || {}, '', path);
+	}
 
 	syncSearchParams();
-
 	Object.assign(location, updatedLocation());
 
-	const { match, layouts, params: newParams } = matchRoute(globalThis.location.pathname, routes);
-	params.value = newParams || {};
-	resolveRouteComponents(match ? [...layouts, match] : layouts).then((components) => {
-		componentTree.value = components;
-	});
+	for (const { afterLoad } of hooks) {
+		afterLoad?.();
+	}
 }
 
 /** @param {Event} event */
@@ -106,9 +129,12 @@ export function onGlobalClick(event) {
 
 	event.preventDefault();
 	const { replace, state } = anchor.dataset;
-	const historyMethod = replace === undefined || replace === 'false' ? 'pushState' : 'replaceState';
-	globalThis.history[historyMethod](state || {}, '', anchor.href);
-	onNavigate();
+	onNavigate(url.pathname, {
+		replace: replace === '' || replace === 'true',
+		search: url.search,
+		state,
+		hash: url.hash,
+	});
 }
 
 function updatedLocation() {

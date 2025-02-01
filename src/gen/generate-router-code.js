@@ -9,7 +9,8 @@ import path from 'node:path';
  * }} GeneratedRoutes
  */
 
-const PARAM_FILENAME_REGEX = /\[(.*)\].svelte/g;
+const PARAM_FILENAME_REGEX = /\[(.*)\].svelte/;
+const HOOKS_FILENAME_REGEX = /hooks(\.svelte)?\.(js|ts)$/;
 
 /**
  * @param {string} routesPath
@@ -35,7 +36,9 @@ export function buildFileTree(routesPath) {
 			tree.push({ name: entry, tree: buildFileTree(path.join(routesPath, entry)) });
 			continue;
 		}
-		if (!entry.endsWith('.svelte')) continue;
+		if (!entry.endsWith('.svelte') && !HOOKS_FILENAME_REGEX.test(entry)) {
+			continue;
+		}
 		tree.push(entry);
 	}
 	return tree;
@@ -51,6 +54,14 @@ export function createRouteMap(fileTree, prefix = '') {
 	const result = {};
 	for (const entry of fileTree) {
 		if (typeof entry === 'string') {
+			if (!entry.endsWith('.svelte')) {
+				if (HOOKS_FILENAME_REGEX.test(entry)) {
+					result['hooks'] = prefix + entry;
+					continue;
+				}
+				continue;
+			}
+
 			if (entry.endsWith('index.svelte')) {
 				const indexEntry = entry.replace(/\.?index\.svelte/, '');
 				result['/' + (indexEntry ? filePathToRoute(indexEntry) : '')] = prefix + entry;
@@ -63,7 +74,7 @@ export function createRouteMap(fileTree, prefix = '') {
 			}
 
 			// Match [...slug].svelte
-			const catchAll = /\[\.\.\.(.*)\]\.svelte/g.exec(entry);
+			const catchAll = /\[\.\.\.(.*)\]\.svelte/.exec(entry);
 			if (catchAll) {
 				result['*' + catchAll[1]] = prefix + entry;
 				continue;
@@ -71,8 +82,7 @@ export function createRouteMap(fileTree, prefix = '') {
 
 			// Match [id].svelte
 			if (PARAM_FILENAME_REGEX.test(entry)) {
-				result['/' + filePathToRoute(entry.replaceAll(PARAM_FILENAME_REGEX, ':$1'))] =
-					prefix + entry;
+				result['/' + filePathToRoute(entry.replace(PARAM_FILENAME_REGEX, ':$1'))] = prefix + entry;
 				continue;
 			}
 
@@ -105,14 +115,56 @@ export function createRouterCode(routes, routesPath) {
 		routesPath += '/';
 	}
 
-	const jsonRoutes = JSON.stringify(routes, undefined, 2);
-	const withImports = jsonRoutes.replaceAll(
-		/"(.*)": "(.*)",?/g,
-		`"$1": () => import("${routesPath}$2"),`,
-	);
+	/** @type {Map<string, string>} */
+	const importsMap = new Map();
+
+	const withImports = (function handleImports(routes, routesPath) {
+		/** @type {GeneratedRoutes} */
+		const result = {};
+		for (const [key, value] of Object.entries(routes)) {
+			if (typeof value === 'object') {
+				result[key] = handleImports(value, routesPath);
+			} else if (key === 'hooks') {
+				const variableName = hooksPathToCamelCase(value);
+				importsMap.set(variableName, routesPath + value);
+				result[key] = variableName;
+			} else {
+				result[key] = `() => import('${routesPath}${value}')`;
+			}
+		}
+		return result;
+	})(routes, routesPath);
+
+	const imports = [...importsMap.entries()].map(([key, value]) => {
+		if (value.endsWith('.ts')) {
+			value = value.replace('.ts', '');
+		}
+		return `import ${key} from '${value}';`;
+	});
+
+	const stringifiedRoutes = JSON.stringify(withImports, undefined, 2)
+		.replaceAll(/"(.*)": /g, `'$1': `)
+		.replaceAll(/: "(.*)"/g, ': $1');
+
 	return [
-		'import { createRouter } from "sv-router";',
-		'\n\n',
-		`export const { p, navigate, isActive, route } = createRouter(${withImports});`,
-	].join('');
+		`import { createRouter } from 'sv-router';`,
+		...imports,
+		'',
+		`export const { p, navigate, isActive, route } = createRouter(${stringifiedRoutes});`,
+	].join('\n');
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+export function hooksPathToCamelCase(value) {
+	const parts = value.split(/\/|-/);
+	parts.pop();
+	parts.push('hooks');
+	const uppercased = parts.map((part, index) => {
+		if (index === 0) return part;
+		return part.charAt(0).toUpperCase() + part.slice(1);
+	});
+	return uppercased.join('');
 }

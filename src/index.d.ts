@@ -15,7 +15,7 @@ export const isActiveLink: IsActiveLink;
  * Setup a new router instance with the given routes.
  *
  * ```js
- * export const { p, navigate, route } = createRouter({
+ * export const { p, navigate, isActive, route } = createRouter({
  *   '/': Home,
  *   '/about': About,
  *   ...
@@ -42,11 +42,30 @@ export type RouteComponent<Props extends BaseProps = any> =
 	| Component<Props>
 	| LazyRouteComponent<Props>;
 export type LayoutComponent = RouteComponent<{ children: Snippet }>;
+export type Hooks = {
+	/**
+	 * A function that will be called before the route is loaded. If it returns a promise, the route
+	 * will wait for it to resolve before loading.
+	 *
+	 * You can throw a `navigate` call to redirect to another route.
+	 *
+	 * ```js
+	 * async beforeLoad() {
+	 *   await ...
+	 *   throw navigate('/home');
+	 * }
+	 * ```
+	 */
+	beforeLoad?(): void | Promise<void>;
+	/** A function that will be called after the route is loaded. */
+	afterLoad?(): void;
+};
 
 export type Routes = {
 	[_: `/${string}`]: RouteComponent | Routes;
 	[_: `*${string}`]: RouteComponent | undefined;
 	layout?: LayoutComponent;
+	hooks?: Hooks;
 };
 
 export type IsActiveLink = Action<HTMLAnchorElement, { className?: string } | undefined>;
@@ -139,7 +158,7 @@ export type NavigateOptions =
 			replace?: boolean;
 			search?: string;
 			state?: string;
-			hash?: `#${string}`;
+			hash?: string;
 	  }
 	| undefined;
 
@@ -153,7 +172,9 @@ type StripNonRoutes<T extends Routes> = {
 		? never
 		: K extends 'layout'
 			? never
-			: K]: T[K] extends Routes ? StripNonRoutes<T[K]> : T[K];
+			: K extends 'hooks'
+				? never
+				: K]: T[K] extends Routes ? StripNonRoutes<T[K]> : T[K];
 };
 
 type RecursiveKeys<T extends Routes, Prefix extends string = ''> = {

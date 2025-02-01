@@ -1,22 +1,33 @@
 import { createRouter } from 'sv-router';
-import DynamicPost from './routes/DynamicPost.svelte';
 import Home from './routes/Home.svelte';
-import NotFound from './routes/NotFound.svelte';
-import Posts from './routes/Posts.svelte';
-import StaticPost from './routes/StaticPost.svelte';
 
 export const { p, navigate, isActive, route } = createRouter({
 	'/': Home,
 	'/about': () => import('./routes/About.svelte'),
 	'/a/more/nested/route': () => import('./routes/AMoreNestedRoute.svelte'),
 	'/posts': {
-		'/': Posts,
-		'/static': StaticPost,
-		'/:slug': DynamicPost,
+		'/': () => import('./routes/Posts.svelte'),
+		'/static': () => import('./routes/StaticPost.svelte'),
+		'/:slug': () => import('./routes/DynamicPost.svelte'),
 		'/comments': {
 			'/:commentId': () => import('./routes/Comment.svelte'),
+			hooks: {
+				afterLoad() {
+					// eslint-disable-next-line no-console
+					console.log('Loaded comment');
+				},
+			},
 		},
 		layout: () => import('./Layout.svelte'),
 	},
-	'*notfound': NotFound,
+	'/unauthorized': {
+		'/': () => import('./routes/Unauthorized.svelte'),
+		hooks: {
+			async beforeLoad() {
+				await new Promise((r) => setTimeout(r, 1000));
+				throw navigate('/');
+			},
+		},
+	},
+	'*notfound': () => import('./routes/NotFound.svelte'),
 });

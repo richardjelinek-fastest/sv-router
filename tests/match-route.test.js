@@ -20,6 +20,8 @@ const Layout1 = () => 'Layout1';
 const Layout2 = () => 'Layout2';
 /** @type {import('svelte').Component} */
 const NoLayout = () => 'NoLayout';
+const Hooks1 = Symbol();
+const Hooks2 = Symbol();
 
 describe('matchRoute', () => {
 	describe.each([
@@ -60,8 +62,10 @@ describe('matchRoute', () => {
 							'/:commentId': DynamicPostComment,
 						},
 						layout: Layout2,
+						hooks: Hooks2,
 					},
 					layout: Layout1,
+					hooks: Hooks1,
 				},
 				'/users': {
 					'*': UserNotFound,
@@ -80,9 +84,11 @@ describe('matchRoute', () => {
 							'/:commentId': DynamicPostComment,
 						},
 						'/': DynamicPost,
+						hooks: Hooks2,
 						layout: Layout2,
 					},
 					'/': Posts,
+					hooks: Hooks1,
 					'/static': StaticPost,
 					layout: Layout1,
 				},
@@ -158,6 +164,16 @@ describe('matchRoute', () => {
 				expect(match2).toEqual(NoLayout);
 				expect(layouts2).toEqual([]);
 				delete routes['/(nolayout)'];
+			});
+
+			it('should match one hook', () => {
+				const { hooks } = matchRoute('/posts', routes);
+				expect(hooks).toEqual([Hooks1]);
+			});
+
+			it('should match multiple hooks', () => {
+				const { hooks } = matchRoute('/posts/bar/comments/baz', routes);
+				expect(hooks).toEqual([Hooks1, Hooks2]);
 			});
 		}
 
