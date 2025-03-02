@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitepress';
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons';
 
 export default defineConfig({
-	title: 'sv-router | Modern Svelte routing',
+	title: 'sv-router | Modern Svelte Routing',
 	description: 'A feature-rich yet intuitive routing library for Svelte single-page apps.',
 	head: [['link', { rel: 'icon', href: '/logo.svg' }]],
 	cleanUrls: true,
@@ -21,10 +22,46 @@ export default defineConfig({
 			'/guide': [
 				{
 					text: 'Introduction',
+					collapsed: false,
 					items: [
 						{ text: 'Why sv-router?', link: '/guide/why' },
 						{ text: 'Getting Started', link: '/guide/getting-started' },
 					],
+				},
+				{
+					text: 'Code-based Routing',
+					collapsed: false,
+					items: [
+						{ text: 'Setup', link: '/guide/code-based/setup' },
+						{ text: 'Routing Concepts', link: '/guide/code-based/routing-concepts' },
+						{ text: 'Hooks', link: '/guide/code-based/hooks' },
+						{ text: 'Code Splitting', link: '/guide/code-based/code-splitting' },
+					],
+				},
+				{
+					text: 'File-based Routing',
+					collapsed: false,
+					items: [
+						{ text: 'Setup', link: '/guide/file-based/setup' },
+						{ text: 'Routing Concepts', link: '/guide/file-based/routing-concepts' },
+						{ text: 'Hooks', link: '/guide/file-based/hooks' },
+						{ text: 'Code Splitting', link: '/guide/file-based/code-splitting' },
+						{ text: 'Configuration', link: '/guide/file-based/configuration' },
+					],
+				},
+				{
+					text: 'Common',
+					collapsed: false,
+					items: [
+						{ text: 'Navigation', link: '/guide/common/navigation' },
+						{ text: 'Search Params', link: '/guide/common/search-params' },
+						{ text: 'Active Route', link: '/guide/common/active-route' },
+						{ text: 'Preloading', link: '/guide/common/preloading' },
+					],
+				},
+				{
+					text: 'API reference',
+					link: '/reference/foo',
 				},
 			],
 			'/reference': [
@@ -48,5 +85,14 @@ export default defineConfig({
 		search: {
 			provider: 'local',
 		},
+	},
+	markdown: {
+		config(md) {
+			md.use(groupIconMdPlugin);
+		},
+	},
+	vite: {
+		// @ts-expect-error Types not up-to-date
+		plugins: [groupIconVitePlugin()],
 	},
 });
