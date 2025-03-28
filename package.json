@@ -38,7 +38,7 @@
 		"docs:preview": "pnpm --filter docs preview",
 		"test": "vitest",
 		"check": "svelte-check && pnpm -r check",
-		"lint": "eslint .",
+		"lint": "eslint . --max-warnings 0",
 		"lint:fix": "eslint . --fix",
 		"format": "prettier . --check",
 		"format:fix": "prettier . --write",
