@@ -2,11 +2,11 @@ import { BROWSER, DEV } from 'esm-env';
 import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preloadOnHover } from './helpers/preload-on-hover.js';
-import { constructPath, resolveRouteComponents } from './helpers/utils.js';
+import { constructPath, join, resolveRouteComponents } from './helpers/utils.js';
 import { syncSearchParams } from './search-params.svelte.js';
 
 /** @type {import('./index.d.ts').Routes} */
-export let routes;
+let routes;
 
 /** @type {{ value: import('svelte').Component[] }} */
 export let componentTree = $state({ value: [] });
@@ -15,6 +15,11 @@ export let componentTree = $state({ value: [] });
 export let params = $state({ value: {} });
 
 export let location = $state(updatedLocation());
+
+/** @type {{ name?: string }} */
+export const base = {
+	name: undefined,
+};
 
 /**
  * @template {import('./index.d.ts').Routes} T
@@ -85,12 +90,11 @@ export async function onNavigate(path, options = {}) {
 	if (!routes) {
 		throw new Error('Router not initialized: `createRouter` was not called.');
 	}
-	const {
-		match,
-		layouts,
-		hooks,
-		params: newParams,
-	} = matchRoute(path || globalThis.location.pathname, routes);
+	let matchPath = path || globalThis.location.pathname;
+	if (base.name && matchPath.startsWith(base.name)) {
+		matchPath = matchPath.slice(base.name.length) || '/';
+	}
+	const { match, layouts, hooks, params: newParams } = matchRoute(matchPath, routes);
 
 	for (const { beforeLoad } of hooks) {
 		try {
@@ -107,7 +111,8 @@ export async function onNavigate(path, options = {}) {
 		if (options.search) path += options.search;
 		if (options.hash) path += options.hash;
 		const historyMethod = options.replace ? 'replaceState' : 'pushState';
-		globalThis.history[historyMethod](options.state || {}, '', path);
+		const to = base.name ? join(base.name, path) : path;
+		globalThis.history[historyMethod](options.state || {}, '', to);
 	}
 
 	syncSearchParams();
@@ -148,7 +153,7 @@ function updatedLocation() {
 	return {
 		pathname: globalThis.location.pathname,
 		search: globalThis.location.search,
-		state: globalThis.history.state,
+		state: history.state,
 		hash: globalThis.location.hash,
 	};
 }

@@ -1,7 +1,20 @@
 <script>
 	import { on } from 'svelte/events';
-	import { componentTree, onGlobalClick, onNavigate } from './create-router.svelte.js';
+	import { base, componentTree, onGlobalClick, onNavigate } from './create-router.svelte.js';
+	import { join } from './helpers/utils.js';
 	import RecursiveComponentTree from './RecursiveComponentTree.svelte';
+
+	/** @type {{ base?: string }} */
+	let { base: basename } = $props();
+
+	if (basename) {
+		base.name = (basename.startsWith('/') ? '' : '/') + basename;
+		const url = new URL(globalThis.location.href);
+		if (!url.pathname.startsWith(base.name)) {
+			url.pathname = join(base.name, url.pathname);
+			history.replaceState(history.state || {}, '', url.href);
+		}
+	}
 
 	onNavigate();
 
