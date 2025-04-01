@@ -1,7 +1,8 @@
 /**
  * @type {{
- * 	routesPath: string;
+ * 	allLazy: boolean;
  * 	routesInJs: boolean;
+ * 	routesPath: string;
  * 	readonly genCodeDirPath: string;
  * 	readonly routerPath: string;
  * 	readonly tsconfigPath: string;
@@ -9,8 +10,9 @@
  * }}
  */
 export const genConfig = {
-	routesPath: 'src/routes',
+	allLazy: false,
 	routesInJs: false,
+	routesPath: 'src/routes',
 	genCodeDirPath: '.router',
 	get routerPath() {
 		return '.router/router.' + (this.routesInJs ? 'js' : 'ts');
