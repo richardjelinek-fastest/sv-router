@@ -1,5 +1,4 @@
 <script lang="ts">
-	import './router.ts';
 	import { Router } from 'sv-router';
 	import { p } from './router';
 </script>
