@@ -63,6 +63,10 @@ export default defineConfig({
 					],
 				},
 				{
+					text: 'Tips',
+					link: '/guide/tips',
+				},
+				{
 					text: 'API reference',
 					link: '/reference/',
 				},
