@@ -4,7 +4,7 @@
 
 <p>
 	Check out the <a
-		href="https://sv-router.vercel.app/guide/code-based/routing-concepts"
+		href="https://sv-router.vercel.app/guide/code-based/route-definition"
 		target="_blank"
 	>
 		documentation

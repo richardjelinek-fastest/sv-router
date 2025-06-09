@@ -10,25 +10,13 @@ Similar to SvelteKit, standard anchor tags provide basic navigation between page
 
 To leverage type-safe navigation, use the `p` function, which provides auto-complete and type checking for your routes.
 
-::: code-group
-
-```svelte [Code-based]
+```svelte
 <script lang="ts">
 	import { p } from '../router';
 </script>
 
 <a href={p('/about')}>About</a>
 ```
-
-```svelte [File-based]
-<script lang="ts">
-	import { p } from 'sv-router/generated';
-</script>
-
-<a href={p('/about')}>About</a>
-```
-
-:::
 
 You can also pass parameters and additional options:
 
@@ -46,25 +34,13 @@ You can also pass parameters and additional options:
 
 For navigation triggered by JavaScript events, use the `navigate` function, which also provides auto-complete and type checking for your routes:
 
-::: code-group
-
-```svelte [Code-based]
+```svelte
 <script lang="ts">
 	import { navigate } from '../router';
 </script>
 
 <button onclick={() => navigate('/about')}>About</button>
 ```
-
-```svelte [File-based]
-<script lang="ts">
-	import { navigate } from 'sv-router/generated';
-</script>
-
-<button onclick={() => navigate('/about')}>About</button>
-```
-
-:::
 
 Similarly, you can pass parameters and additional options:
 
