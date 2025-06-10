@@ -74,12 +74,27 @@ export type Routes = {
 	[_: `*${string}` | `(*${string})`]: RouteComponent | undefined;
 	layout?: LayoutComponent;
 	hooks?: Hooks;
+	meta?: RouteMeta;
 };
 
 export type IsActiveLink = Action<
 	HTMLAnchorElement,
 	{ className?: string; startsWith?: boolean } | undefined
 >;
+
+/**
+ * Route metadata that can be extended via module augmentation.
+ *
+ * @example
+ * 	declare module 'sv-router' {
+ * 		interface RouteMeta {
+ * 			public?: boolean;
+ * 			requiresAuth?: boolean;
+ * 		}
+ * 	}
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface RouteMeta {}
 
 export type RouterApi<T extends Routes> = {
 	/**
@@ -166,6 +181,8 @@ export type RouterApi<T extends Routes> = {
 		state: unknown;
 		/** The reactive hash part of the URL. */
 		hash: string;
+		/** Arbitrary metadata associated with the route. */
+		meta: RouteMeta;
 	};
 };
 
@@ -221,7 +238,9 @@ type StripNonRoutes<T extends Routes> = {
 				? never
 				: K extends 'hooks'
 					? never
-					: K]: T[K] extends Routes ? StripNonRoutes<T[K]> : T[K];
+					: K extends 'meta'
+						? never
+						: K]: T[K] extends Routes ? StripNonRoutes<T[K]> : T[K];
 };
 
 type RecursiveKeys<

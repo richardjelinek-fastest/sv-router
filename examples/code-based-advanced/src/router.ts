@@ -12,7 +12,12 @@ export const { p, navigate, isActive, preload, route } = createRouter({
 	'/posts': {
 		'/': () => import('./routes/Posts.svelte'),
 		'/static': StaticPost,
-		'/:slug': () => import('./routes/DynamicPost.svelte'),
+		'/:slug': {
+			'/': () => import('./routes/DynamicPost.svelte'),
+			meta: {
+				section: 'Comments',
+			},
+		},
 		'/comments': {
 			'/(:commentId)': () => import('./routes/Comment.svelte'),
 			hooks: {
@@ -27,6 +32,10 @@ export const { p, navigate, isActive, preload, route } = createRouter({
 			},
 		},
 		layout: Layout,
+		meta: {
+			public: true,
+			section: 'Posts',
+		},
 	},
 	'/unauthorized': {
 		'/': () => import('./routes/Unauthorized.svelte'),

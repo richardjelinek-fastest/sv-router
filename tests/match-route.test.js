@@ -60,12 +60,20 @@ describe('matchRoute', () => {
 						'/': DynamicPost,
 						'/comments': {
 							'/:commentId': DynamicPostComment,
+							meta: {
+								public: false,
+								section: 'comments',
+							},
 						},
 						layout: Layout2,
 						hooks: Hooks2,
 					},
 					layout: Layout1,
 					hooks: Hooks1,
+					meta: {
+						public: true,
+						requiresAuth: false,
+					},
 				},
 				'/users': {
 					'*': UserNotFound,
@@ -79,8 +87,16 @@ describe('matchRoute', () => {
 			routes: {
 				'*rest': PageNotFound,
 				'/posts': {
+					meta: {
+						public: true,
+						requiresAuth: false,
+					},
 					'/:id': {
 						'/comments': {
+							meta: {
+								public: false,
+								section: 'comments',
+							},
 							'/:commentId': DynamicPostComment,
 						},
 						'/': DynamicPost,
@@ -211,6 +227,23 @@ describe('matchRoute', () => {
 			it('should match multiple hooks', () => {
 				const { hooks } = matchRoute('/posts/bar/comments/baz', routes);
 				expect(hooks).toEqual([Hooks1, Hooks2]);
+			});
+
+			it('should match a route with a meta property', () => {
+				const { meta } = matchRoute('/posts', routes);
+				expect(meta).toEqual({
+					public: true,
+					requiresAuth: false,
+				});
+			});
+
+			it('should merge two routes metadata', () => {
+				const { meta } = matchRoute('/posts/bar/comments/baz', routes);
+				expect(meta).toEqual({
+					public: false,
+					section: 'comments',
+					requiresAuth: false,
+				});
 			});
 		}
 
