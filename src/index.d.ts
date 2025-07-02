@@ -80,14 +80,13 @@ export type Routes = {
 
 export type IsActiveLink = Action<
 	HTMLAnchorElement,
-	{
-		class?: ClassValue;
-		/**
-		 * @deprecated Use `class` instead.
-		 */
-		className?: string;
-		startsWith?: boolean;
-	} | undefined
+	| {
+			class?: ClassValue;
+			/** @deprecated Use `class` instead. */
+			className?: string;
+			startsWith?: boolean;
+	  }
+	| undefined
 >;
 
 /**
