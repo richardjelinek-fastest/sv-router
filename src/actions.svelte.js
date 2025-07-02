@@ -1,6 +1,6 @@
+import { clsx } from 'clsx';
 import { base, location } from './create-router.svelte.js';
 import { join } from './helpers/utils.js';
-import { clsx } from 'clsx';
 
 /** @type {import('./index.d.ts').IsActiveLink} */
 export function isActiveLink(

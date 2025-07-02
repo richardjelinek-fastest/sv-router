@@ -1,6 +1,6 @@
 import type { Component, Snippet } from 'svelte';
-import type { ClassValue } from 'svelte/elements';
 import type { Action } from 'svelte/action';
+import type { ClassValue } from 'svelte/elements';
 
 /**
  * A Svelte action that will add a class to the anchor if its `href` matches the current route. It
