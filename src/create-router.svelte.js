@@ -120,7 +120,7 @@ export async function onNavigate(path, options = {}) {
 	for (const { beforeLoad } of hooks) {
 		try {
 			pendingNavigationIndex = currentNavigationIndex;
-			await beforeLoad?.({ pathname: matchPath, ...options });
+			await beforeLoad?.({ pathname: matchPath, meta: newMeta, ...options });
 		} catch {
 			return;
 		}
@@ -161,7 +161,7 @@ export async function onNavigate(path, options = {}) {
 	}
 
 	for (const { afterLoad } of hooks) {
-		afterLoad?.({ pathname: matchPath, ...options });
+		void afterLoad?.({ pathname: matchPath, meta, ...options });
 	}
 }
 
