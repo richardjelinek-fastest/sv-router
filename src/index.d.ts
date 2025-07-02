@@ -1,4 +1,5 @@
 import type { Component, Snippet } from 'svelte';
+import type { ClassValue } from 'svelte/elements';
 import type { Action } from 'svelte/action';
 
 /**
@@ -79,7 +80,14 @@ export type Routes = {
 
 export type IsActiveLink = Action<
 	HTMLAnchorElement,
-	{ className?: string; startsWith?: boolean } | undefined
+	{
+		class?: ClassValue;
+		/**
+		 * @deprecated Use `class` instead.
+		 */
+		className?: string;
+		startsWith?: boolean;
+	} | undefined
 >;
 
 /**
