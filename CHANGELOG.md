@@ -1,5 +1,11 @@
 # sv-router
 
+## 0.8.0
+
+### Minor Changes
+
+- 730bdbf: improved class usage in isActiveLink
+
 ## 0.7.1
 
 ### Patch Changes
