@@ -98,7 +98,7 @@ function navigate(path, options = {}) {
 		options.hash = '#' + options.hash;
 	}
 	onNavigate(path, options);
-	return new Error(`Redirecting to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
+	return new Error(`Navigating to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /**
