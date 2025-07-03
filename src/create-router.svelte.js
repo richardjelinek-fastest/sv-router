@@ -133,7 +133,7 @@ export async function onNavigate(path, options = {}) {
 	const routeComponents = await resolveRouteComponents(match ? [...layouts, match] : layouts);
 	if (
 		navigationIndex !== currentNavigationIndex ||
-		(fromBeforeLoadHook && pendingNavigationIndex + 1 !== currentNavigationIndex)
+		(fromBeforeLoadHook && currentNavigationIndex < pendingNavigationIndex)
 	) {
 		return;
 	}
