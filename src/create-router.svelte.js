@@ -108,11 +108,12 @@ export function createRouter(r) {
 /**
  * @param {string | number} path
  * @param {import('./index.d.ts').NavigateOptions & { params?: Record<string, string> }} options
+ * @returns Promise<Error>
  */
 function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
-		return;
+		return new Error(`Navigating to history entry: ${path}`);
 	}
 
 	path = constructPath(path, options.params);
@@ -126,6 +127,7 @@ function navigate(path, options = {}) {
 		path = new URL(path).hash;
 	}
 	onNavigate(path, options);
+	return new Error(`Navigating to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /** @param {string} [path] */
@@ -148,7 +150,7 @@ function getMatchPath(path) {
 }
 
 /**
- * @param {string} [path]
+ * @param {string} path
  * @param {import('./index.d.ts').NavigateOptions} options
  */
 export async function onNavigate(path, options = {}) {
@@ -248,7 +250,7 @@ export function onGlobalClick(event) {
 
 	event.preventDefault();
 	const { replace, state, scrollToTop, viewTransition } = anchor.dataset;
-	onNavigate(path, {
+	void onNavigate(path, {
 		replace: replace === '' || replace === 'true',
 		search: url.search,
 		state,
