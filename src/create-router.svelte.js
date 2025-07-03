@@ -161,7 +161,7 @@ export async function onNavigate(path, options = {}) {
 	}
 
 	for (const { afterLoad } of hooks) {
-		void afterLoad?.({ pathname: matchPath, meta, ...options });
+		void afterLoad?.({ pathname: matchPath, meta: newMeta, ...options });
 	}
 }
 

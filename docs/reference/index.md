@@ -140,3 +140,4 @@ All hook functions receive a context object with the following properties:
 - `search` - The query string (optional)
 - `state` - The history state (optional)
 - `hash` - The URL hash fragment (optional)
+- `meta` - The meta data (optional)
