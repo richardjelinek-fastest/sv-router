@@ -83,7 +83,7 @@ export function createRouter(r) {
  * @param {import('./index.d.ts').NavigateOptions & { params?: Record<string, string> }} options
  * @returns Promise<Error>
  */
-async function navigate(path, options = {}) {
+function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
 		return new Error(`Navigating to history entry: ${path}`);
@@ -97,7 +97,7 @@ async function navigate(path, options = {}) {
 	if (options.hash && !options.hash.startsWith('#')) {
 		options.hash = '#' + options.hash;
 	}
-	await onNavigate(path, options);
+	onNavigate(path, options);
 	return new Error(`Redirecting to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
@@ -122,7 +122,7 @@ export async function onNavigate(path, options = {}) {
 	for (const { beforeLoad } of hooks) {
 		try {
 			pendingNavigationIndex = currentNavigationIndex;
-			await beforeLoad?.({ pathname: matchPath, meta: newMeta, ...options });
+			await beforeLoad?.({ pathname: matchPath, ...options });
 		} catch {
 			return;
 		}
@@ -163,7 +163,7 @@ export async function onNavigate(path, options = {}) {
 	}
 
 	for (const { afterLoad } of hooks) {
-		void afterLoad?.({ pathname: matchPath, meta, ...options });
+		afterLoad?.({ pathname: matchPath, ...options });
 	}
 }
 
