@@ -65,9 +65,9 @@ export type Hooks = {
 	 */
 	beforeLoad?(context: HooksContext): void | Promise<void>;
 	/** A function that will be called after the route is loaded. */
-	afterLoad?(context: HooksContext): void;
+	afterLoad?(context: HooksContext): void | Promise<void>;
 	/** A function that will be called when the route is preloaded. */
-	onPreload?(context: HooksContext): void;
+	onPreload?(context: HooksContext): void | Promise<void>;
 };
 
 export type Routes = {
@@ -213,11 +213,12 @@ export type AllParams<T extends Routes> = Partial<
 >;
 
 export type HooksContext = {
+	hash?: string;
+	meta: RouteMeta;
 	pathname: string;
 	replace?: boolean;
 	search?: string;
 	state?: string;
-	hash?: string;
 };
 
 export type NavigateOptions =
