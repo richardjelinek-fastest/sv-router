@@ -79,7 +79,11 @@ export type Routes = {
 
 export type IsActiveLink = Action<
 	HTMLAnchorElement,
-	{ className?: string; startsWith?: boolean } | undefined
+	| {
+			className?: string;
+			startsWith?: boolean;
+	  }
+	| undefined
 >;
 
 /**
