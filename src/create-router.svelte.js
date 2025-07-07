@@ -2,7 +2,13 @@ import { BROWSER, DEV } from 'esm-env';
 import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preload, preloadOnHover } from './helpers/preload.js';
-import { constructPath, join, resolveRouteComponents, updatedLocation } from './helpers/utils.js';
+import {
+	constructPath,
+	join,
+	resolveRouteComponents,
+	stripBase,
+	updatedLocation,
+} from './helpers/utils.js';
 import { syncSearchParams } from './search-params.svelte.js';
 
 /** @type {import('./index.d.ts').Routes} */
@@ -60,7 +66,7 @@ export function createRouter(r) {
 				return params.value;
 			},
 			get pathname() {
-				return /** @type {import('./index.d.ts').Path<T>} */ (location.pathname);
+				return /** @type {import('./index.d.ts').Path<T>} */ (stripBase(location.pathname));
 			},
 			get search() {
 				return location.search;
@@ -113,10 +119,7 @@ export async function onNavigate(path, options = {}) {
 	navigationIndex++;
 	const currentNavigationIndex = navigationIndex;
 
-	let matchPath = path;
-	if (base.name && matchPath.startsWith(base.name)) {
-		matchPath = matchPath.slice(base.name.length) || '/';
-	}
+	const matchPath = stripBase(path || globalThis.location.pathname);
 	const { match, layouts, hooks, meta: newMeta, params: newParams } = matchRoute(matchPath, routes);
 
 	for (const { beforeLoad } of hooks) {
@@ -163,7 +166,7 @@ export async function onNavigate(path, options = {}) {
 	}
 
 	for (const { afterLoad } of hooks) {
-		void afterLoad?.({ pathname: matchPath, meta, ...options });
+		void afterLoad?.({ pathname: matchPath, meta: newMeta, ...options });
 	}
 }
 
@@ -174,7 +177,7 @@ export function onGlobalClick(event) {
 
 	if (anchor.hasAttribute('target') || anchor.hasAttribute('download')) return;
 
-	const url = new URL(anchor.href);
+	const url = new URL(anchor.href, globalThis.location.origin);
 	const currentOrigin = globalThis.location.origin;
 	if (url.origin !== currentOrigin) return;
 

@@ -81,8 +81,6 @@ export type Routes = {
 export type IsActiveLink = Action<
 	HTMLAnchorElement,
 	| {
-			class?: ClassValue;
-			/** @deprecated Use `class` instead. */
 			className?: string;
 			startsWith?: boolean;
 	  }
@@ -164,7 +162,7 @@ export type RouterApi<T extends Routes> = {
 	 *
 	 * @param path The route to preload.
 	 */
-	preload<U extends Path<T>>(path: U): Promise<void>;
+	preload<U extends PathWithSearchAndHash<T>>(path: U): Promise<void>;
 
 	route: {
 		/**
