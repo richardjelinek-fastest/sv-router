@@ -8,9 +8,9 @@ import { resolveRouteComponents } from './utils.js';
  */
 export async function preload(routes, path, options) {
 	const pathname = new URL(path, globalThis.location.origin).pathname;
-	const { match, layouts, hooks } = matchRoute(pathname, routes);
+	const { match, layouts, hooks, meta } = matchRoute(pathname, routes);
 	for (const { onPreload } of hooks) {
-		onPreload?.({ pathname, ...options });
+		void onPreload?.({ pathname, meta, ...options });
 	}
 	await resolveRouteComponents(match ? [...layouts, match] : layouts);
 }

@@ -12,10 +12,11 @@ export function isActiveLink(node, { className = 'is-active', startsWith = false
 		if (base.name) {
 			pathname = join(base.name, pathname);
 		}
+		const tokens = className.split(' ').filter(Boolean) ?? [];
 		if (startsWith ? location.pathname.startsWith(pathname) : location.pathname === pathname) {
-			node.classList.add(className);
+			node.classList.add(...tokens);
 		} else {
-			node.classList.remove(className);
+			node.classList.remove(...tokens);
 		}
 	});
 }
