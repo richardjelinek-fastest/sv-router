@@ -111,12 +111,16 @@ export type RouterApi<T extends Routes> = {
 	 * p('/users');
 	 * // With parameters
 	 * p('/users/:id', { id: 1 });
+	 * // With arbitrary search params
+	 * p('/users/:id?modal=cancel, { id: 1 });
+	 * // With arbitrary anchor
+	 * p('/users/:id#cancel', { id: 1 });
 	 * ```
 	 *
 	 * @param route The route to navigate to.
 	 * @param params The parameters to replace in the route.
 	 */
-	p<U extends Path<T>>(...args: ConstructPathArgs<U>): string;
+	p<U extends PathWithSearchAndHash<T>>(...args: ConstructPathArgs<U>): string;
 
 	/**
 	 * Navigate programmatically to a route.
@@ -194,6 +198,14 @@ export type RouterApi<T extends Routes> = {
 		meta: RouteMeta;
 	};
 };
+
+export type AppendSearchAndHash<Path extends string> =
+	`${Path}${'' | `?${string}`}${'' | `#${string}`}`;
+
+export type PathWithSearchAndHash<
+	T extends Routes,
+	AnyParam extends boolean = false,
+> = AppendSearchAndHash<Path<T, AnyParam>>;
 
 export type Path<T extends Routes, AnyParam extends boolean = false> = RemoveParenthesis<
 	RemoveLastSlash<RecursiveKeys<StripNonRoutes<T>, '', AnyParam>>
