@@ -213,12 +213,12 @@ export type IsActiveArgs<T extends string> =
 	PathParams<T> extends never ? [T] : [T] | [T, PathParams<T>];
 
 export type PathParams<T extends string> =
-	ExtractParams<RemoveParenthesis<T>> extends never
+	ExtractParams<CleanPathForParams<T>> extends never
 		? never
-		: Record<ExtractParams<RemoveParenthesis<T>>, string>;
+		: Record<ExtractParams<CleanPathForParams<T>>, string>;
 
 export type AllParams<T extends Routes> = Partial<
-	Record<ExtractParams<RemoveParenthesis<RecursiveKeys<T>>>, string>
+	Record<ExtractParams<CleanPathForParams<RecursiveKeys<T>>>, string>
 >;
 
 export type HooksContext = {
@@ -295,6 +295,14 @@ type RemoveLastSlash<T extends string> = T extends '/' ? T : T extends `${infer 
 type RemoveParenthesis<T extends string> = T extends `${infer A}(${infer B})${infer C}`
 	? RemoveParenthesis<`${A}${B}${C}`>
 	: T;
+
+type RemoveSearchAndHash<T extends string> = T extends `${infer Path}?${string}`
+	? RemoveSearchAndHash<Path>
+	: T extends `${infer Path}#${string}`
+		? RemoveSearchAndHash<Path>
+		: T;
+
+type CleanPathForParams<T extends string> = RemoveParenthesis<RemoveSearchAndHash<T>>;
 
 type ExtractParams<T extends string> = T extends `${string}:${infer Param}/${infer Rest}`
 	? Param | ExtractParams<`/${Rest}`>
