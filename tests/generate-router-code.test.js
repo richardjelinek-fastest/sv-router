@@ -20,7 +20,7 @@ import Index from '../a/fake/path/index.svelte';
 import PostsStatic from '../a/fake/path/posts.static.svelte';
 import PostsNolayout from '../a/fake/path/posts.(nolayout).svelte';
 
-export const routes = Object.freeze({
+const routes = Object.freeze({
   '*notfound': () => import('../a/fake/path/[...notfound].lazy.svelte'),
   '/about': About,
   '/': Index,
@@ -48,7 +48,7 @@ import postsMeta from '../a/fake/path/posts/meta.svelte';
 import postsCommentsHooks from '../a/fake/path/posts/comments/hooks.svelte';
 import postsCommentsMeta from '../a/fake/path/posts/comments/meta';
 
-export const routes = Object.freeze({
+const routes = Object.freeze({
   '*notfound': () => import('../a/fake/path/[...notfound].lazy.svelte'),
   '/about': About,
   '/': Index,
@@ -242,7 +242,7 @@ import PostsCommentsCommentId from './routes/posts/comments/[commentId].svelte';
 import postsCommentsHooks from './routes/posts/comments/hooks.svelte';
 import postsCommentsMeta from './routes/posts/comments/meta.svelte';
 
-export const routes = Object.freeze({
+const routes = Object.freeze({
   '/': Index,
   '/about': About,
   '/posts': {
@@ -272,7 +272,7 @@ import postsMeta from './routes/posts/meta';
 import postsCommentsHooks from './routes/posts/comments/hooks.svelte';
 import postsCommentsMeta from './routes/posts/comments/meta.svelte';
 
-export const routes = Object.freeze({
+const routes = Object.freeze({
   '/': () => import('./routes/index.svelte'),
   '/about': () => import('./routes/about.svelte'),
   '/posts': {
