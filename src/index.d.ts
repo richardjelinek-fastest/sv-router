@@ -68,6 +68,8 @@ export type Hooks = {
 	afterLoad?(context: HooksContext): void | Promise<void>;
 	/** A function that will be called when the route is preloaded. */
 	onPreload?(context: HooksContext): void | Promise<void>;
+	/** A function that will be called when the route fails to load. */
+	onError?(context: HooksContext): void | Promise<void>;
 };
 
 export type Routes = {
