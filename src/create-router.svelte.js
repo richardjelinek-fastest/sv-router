@@ -3,6 +3,7 @@ import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preload, preloadOnHover } from './helpers/preload.js';
 import { constructPath, join, resolveRouteComponents, updatedLocation } from './helpers/utils.js';
+import { Navigation } from './navigation.js';
 import { syncSearchParams } from './search-params.svelte.js';
 
 /** @type {import('./index.d.ts').Routes} */
@@ -86,7 +87,7 @@ export function createRouter(r) {
 function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
-		return new Error(`Navigating to history entry: ${path}`);
+		return new Navigation(`History entry: ${path}`);
 	}
 	if (options.params) {
 		path = constructPath(path, options.params);
@@ -98,7 +99,7 @@ function navigate(path, options = {}) {
 		options.hash = '#' + options.hash;
 	}
 	onNavigate(path, options);
-	return new Error(`Navigating to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
+	return new Navigation(`${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /**
