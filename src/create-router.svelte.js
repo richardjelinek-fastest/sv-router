@@ -129,9 +129,9 @@ export async function onNavigate(path, options = {}) {
 			errorHooks.push(hook);
 			pendingNavigationIndex = currentNavigationIndex;
 			await beforeLoad?.({ pathname: matchPath, meta: newMeta, ...options });
-		} catch {
+		} catch (error) {
 			for (const { onError } of errorHooks) {
-				void onError?.({ pathname: matchPath, meta: newMeta, ...options });
+				void onError?.(error, { pathname: matchPath, meta: newMeta, ...options });
 			}
 			return;
 		}
@@ -144,7 +144,7 @@ export async function onNavigate(path, options = {}) {
 		routeComponents = await resolveRouteComponents(match ? [...layouts, match] : layouts);
 	} catch (error) {
 		for (const { onError } of hooks) {
-			void onError?.({ pathname: matchPath, meta: newMeta, ...options });
+			void onError?.(error, { pathname: matchPath, meta: newMeta, ...options });
 		}
 		throw error;
 	}
