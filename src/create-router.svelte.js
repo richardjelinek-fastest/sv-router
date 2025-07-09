@@ -2,6 +2,7 @@ import { BROWSER, DEV } from 'esm-env';
 import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preload, preloadOnHover } from './helpers/preload.js';
+import { Navigation } from './navigation.js';
 import {
 	constructPath,
 	join,
@@ -113,7 +114,7 @@ export function createRouter(r) {
 function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
-		return new Error(`Navigating to history entry: ${path}`);
+		return new Navigation(`History entry: ${path}`);
 	}
 
 	path = constructPath(path, options.params);
@@ -127,7 +128,7 @@ function navigate(path, options = {}) {
 		path = new URL(path).hash;
 	}
 	onNavigate(path, options);
-	return new Error(`Navigating to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
+	return new Navigation(`${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /** @param {string} [path] */
