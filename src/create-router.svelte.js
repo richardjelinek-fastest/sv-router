@@ -9,8 +9,8 @@ import {
 	stripBase,
 	updatedLocation,
 } from './helpers/utils.js';
-import { syncSearchParams } from './search-params.svelte.js';
 import { Navigation } from './navigation.js';
+import { syncSearchParams } from './search-params.svelte.js';
 
 /** @type {import('./index.d.ts').Routes} */
 let routes;

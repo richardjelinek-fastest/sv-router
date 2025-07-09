@@ -215,11 +215,11 @@ export type Path<T extends Routes, AnyParam extends boolean = false> = RemovePar
 >;
 
 export type ConstructPathArgs<TPath extends string> = {
-	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path, PathParams<Path>]
+	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path, PathParams<Path>];
 }[TPath];
 
 export type IsActiveArgs<TPath extends string> = {
-	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path] | [Path, PathParams<Path>]
+	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path] | [Path, PathParams<Path>];
 }[TPath];
 
 export type PathParams<TPath extends string> =
