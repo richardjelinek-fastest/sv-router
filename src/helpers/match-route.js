@@ -11,8 +11,9 @@
  */
 
 /**
- * @param {string} pathname
+ * @param {string} path
  * @param {Routes} routes
+ * @param {string} [catchingAllFrom]
  * @returns {{
  * 	match: RouteComponent | undefined;
  * 	layouts: LayoutComponent[];
@@ -22,59 +23,86 @@
  * 	breakFromLayouts: boolean;
  * }}
  */
-export function matchRoute(pathname, routes) {
+export function matchRoute(path, routes, catchingAllFrom) {
+	let pathname = new URL(path, globalThis.location.origin).pathname;
 	// Remove trailing slash
 	if (pathname.length > 1 && pathname.endsWith('/')) {
 		pathname = pathname.slice(0, -1);
 	}
 	const pathParts = pathname.split('/').slice(1);
-	const allRoutes = sortRoutes(Object.keys(routes));
+	const sortedRoutes = sortRoutes(Object.keys(routes));
 
-	/** @type {RouteComponent | undefined} */
-	let match;
+	const result = findMatchingRoute(routes, pathParts, sortedRoutes, catchingAllFrom);
+	if (!result.match) {
+		catchingAllFrom = pathname;
+	}
+	do {
+		const catchAllResult = findMatchingRoute(routes, pathParts, sortedRoutes, catchingAllFrom);
+		result.match = catchAllResult.match;
+		catchingAllFrom = catchingAllFrom?.split("/").slice(0, -1).join("/");
+	} while (!result.match && catchingAllFrom)
+	return { ...result, layouts: [...result.layouts] };
+}
 
-	/** @type {LayoutComponent[]} */
-	let layouts = [];
+/**
+ * @param {Routes} routes
+ * @param {string[]} pathParts
+ * @param {string[]} sortedRoutes
+ * @param {string} [catchingAllFrom]
+ */
+function findMatchingRoute(routes, pathParts, sortedRoutes, catchingAllFrom) {
+	/**
+	 * @type {{
+	 * 	match: RouteComponent | undefined;
+	 * 	layouts: Set<LayoutComponent>;
+	 * 	hooks: Hooks[];
+	 * 	params: Record<string, string>;
+	 * 	meta: RouteMeta;
+	 * 	breakFromLayouts: boolean;
+	 * }}
+	 */
+	const response = {
+		match: undefined,
+		layouts: new Set(),
+		hooks: [],
+		params: {},
+		meta: {},
+		breakFromLayouts: false,
+	};
 
-	/** @type {Hooks[]} */
-	let hooks = [];
-
-	/** @type {Record<string, string>} */
-	let params = {};
-
-	/** @type {RouteMeta} */
-	let meta = {};
-
-	let breakFromLayouts = false;
-
-	outer: for (const route of allRoutes) {
+	for (const route of sortedRoutes) {
 		const routeParts = route.split('/');
 		if (routeParts[0] === '') routeParts.shift();
 
 		for (let [index, routePart] of routeParts.entries()) {
-			breakFromLayouts = routePart.startsWith('(') && routePart.endsWith(')');
-			if (breakFromLayouts) {
+			response.breakFromLayouts = routePart.startsWith('(') && routePart.endsWith(')');
+			if (response.breakFromLayouts) {
 				routePart = routePart.slice(1, -1);
 			}
 
 			const pathPart = pathParts[index];
-			if (routePart.startsWith(':')) {
-				params[routePart.slice(1)] = pathPart;
-			} else if (routePart.startsWith('*')) {
+			const path = `/${routeParts.slice(0, index).join("/")}`;
+			if (
+				routePart.startsWith('*') && catchingAllFrom === path
+			) {
 				const param = routePart.slice(1);
 				if (param) {
-					params[param] = pathParts.slice(index).join('/');
+					response.params[param] = pathParts.slice(index).join('/');
 				}
-				if (breakFromLayouts) {
+				if (response.breakFromLayouts) {
 					routePart = `(${routePart})`;
 				} else if ('layout' in routes && routes.layout) {
-					layouts.push(routes.layout);
+					response.layouts.add(routes.layout);
 				}
 				const resolvedPath = /** @type {keyof Routes} */ (
 					(index ? '/' : '') + routeParts.join('/')
 				);
-				match = /** @type {RouteComponent} */ (routes[resolvedPath]);
-				break outer;
+				response.match = /** @type {RouteComponent} */ (routes[resolvedPath]);
+				return response;
+			}
+
+			if (routePart.startsWith(':')) {
+				response.params[routePart.slice(1)] = pathPart;
 			} else if (routePart !== pathPart?.toLowerCase()) {
 				break;
 			}
@@ -87,44 +115,47 @@ export function matchRoute(pathname, routes) {
 				routes[/** @type {keyof Routes} */ ('/' + routeParts.join('/'))]
 			);
 
-			if (!breakFromLayouts && 'layout' in routes && routes.layout) {
-				layouts.push(routes.layout);
+			if (!response.breakFromLayouts && 'layout' in routes && routes.layout) {
+				response.layouts.add(routes.layout);
 			}
 
 			if ('hooks' in routes && routes.hooks) {
-				hooks.push(routes.hooks);
+				response.hooks.push(routes.hooks);
 			}
 
 			if ('meta' in routes && routes.meta) {
-				meta = { ...meta, ...routes.meta };
+				response.meta = { ...response.meta, ...routes.meta };
 			}
 
 			if (typeof routeMatch === 'function') {
-				if (routeParts.length === pathParts.length) {
-					match = routeMatch;
-					break outer;
+				if (routeParts.length === pathParts.length && !catchingAllFrom) {
+					response.match = routeMatch;
+					return response;
 				}
 				continue;
 			}
 
 			const nestedPathname = '/' + pathParts.slice(index + 1).join('/');
-			const result = matchRoute(nestedPathname, routeMatch);
+			const result = matchRoute(nestedPathname, routeMatch, path);
 			if (result) {
-				match = result.match;
-				params = { ...params, ...result.params };
-				hooks.push(...result.hooks);
-				meta = { ...meta, ...result.meta };
+				response.match = result.match;
+				response.params = { ...response.params, ...result.params };
+				response.hooks.push(...result.hooks);
+				response.meta = { ...response.meta, ...result.meta };
 				if (result.breakFromLayouts) {
-					layouts = [];
+					response.layouts.clear();
 				} else {
-					layouts.push(...result.layouts);
+					for (const layout of result.layouts) {
+						response.layouts.add(layout);
+					}
 				}
 			}
-			break outer;
+			if (!catchingAllFrom) {
+				return response;
+			}
 		}
 	}
-
-	return { match, layouts, hooks, params, meta, breakFromLayouts };
+	return response;
 }
 
 /**
@@ -132,7 +163,11 @@ export function matchRoute(pathname, routes) {
  * @returns {string[]}
  */
 export function sortRoutes(routes) {
-	return routes.toSorted((a, b) => getRoutePriority(a) - getRoutePriority(b));
+	return routes.toSorted((a, b) => {
+		const splitA = a.split("/");
+		const splitB = b.split("/");
+		return splitA.reduce((acc, a) => acc + getRoutePriority(a), 0) - splitB.reduce((acc, b) => acc + getRoutePriority(b), 0);
+	});
 }
 
 /**
@@ -141,7 +176,7 @@ export function sortRoutes(routes) {
  */
 function getRoutePriority(route) {
 	if (route === '' || route === '/') return 1;
-	if (route.startsWith('*')) return 4;
+	if (route.startsWith('*') || route.startsWith('(*')) return 4;
 	if (route.includes(':')) return 3;
 	return 2;
 }

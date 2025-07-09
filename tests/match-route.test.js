@@ -180,6 +180,17 @@ describe('matchRoute', () => {
 			}
 		});
 
+		it('should match nearest catch-all when in nested route', () => {
+			const { match, params, layouts } = matchRoute('/posts/static/notfound', routes);
+			expect(match).toEqual(PageNotFound);
+			expect(params).toEqual({
+				rest: 'posts/static/notfound',
+			});
+			if (treeMode) {
+				expect(layouts).toEqual([Layout1]);
+			}
+		});
+
 		if (treeMode) {
 			it('should match routes with layout', () => {
 				const { layouts: layouts1 } = matchRoute('/', routes);
@@ -222,6 +233,11 @@ describe('matchRoute', () => {
 			});
 
 			it('should break out of layouts with catch-all', () => {
+				if (typeof routes['/users'] === 'object') {
+					delete routes['/users']['*'];
+				} else {
+					delete routes['/users/*'];
+				}
 				/** @type {import('../src/index.d.ts').Routes} */ (routes['/users'])['(*foo)'] = NoLayout;
 				const { match, layouts, params } = matchRoute('/users/nolayout', routes);
 				expect(match).toEqual(NoLayout);
@@ -268,7 +284,7 @@ describe('matchRoute', () => {
 
 describe('sortRoutes', () => {
 	it('should sort routes', () => {
-		const result = sortRoutes(['/:id', '*rest', '/foo', '', '/']);
-		expect(result).toEqual(['', '/', '/foo', '/:id', '*rest']);
+		const result = sortRoutes(['/:id', '*rest', '/foo', '', '/foo/(*rest)', '/']);
+		expect(result).toEqual(['', '/', '/foo', '/:id', '*rest', '/foo/(*rest)']);
 	});
 });
