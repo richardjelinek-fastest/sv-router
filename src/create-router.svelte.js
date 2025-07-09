@@ -10,6 +10,7 @@ import {
 	updatedLocation,
 } from './helpers/utils.js';
 import { syncSearchParams } from './search-params.svelte.js';
+import { Navigation } from './navigation.js';
 
 /** @type {import('./index.d.ts').Routes} */
 let routes;
@@ -92,7 +93,7 @@ export function createRouter(r) {
 function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
-		return new Error(`Navigating to history entry: ${path}`);
+		return new Navigation(`History entry: ${path}`);
 	}
 	if (options.params) {
 		path = constructPath(path, options.params);
@@ -104,7 +105,7 @@ function navigate(path, options = {}) {
 		options.hash = '#' + options.hash;
 	}
 	onNavigate(path, options);
-	return new Error(`Navigating to: ${path}${options?.search ?? ''}${options?.hash ?? ''}`);
+	return new Navigation(`${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /**
