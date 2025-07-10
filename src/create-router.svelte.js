@@ -9,6 +9,7 @@ import {
 	stripBase,
 	updatedLocation,
 } from './helpers/utils.js';
+import { Navigation } from './navigation.js';
 import { syncSearchParams } from './search-params.svelte.js';
 
 /** @type {import('./index.d.ts').Routes} */
@@ -87,11 +88,12 @@ export function createRouter(r) {
 /**
  * @param {string | number} path
  * @param {import('./index.d.ts').NavigateOptions & { params?: Record<string, string> }} options
+ * @returns Promise<Error>
  */
 function navigate(path, options = {}) {
 	if (typeof path === 'number') {
 		globalThis.history.go(path);
-		return;
+		return new Navigation(`History entry: ${path}`);
 	}
 	if (options.params) {
 		path = constructPath(path, options.params);
@@ -103,10 +105,11 @@ function navigate(path, options = {}) {
 		options.hash = '#' + options.hash;
 	}
 	onNavigate(path, options);
+	return new Navigation(`${path}${options?.search ?? ''}${options?.hash ?? ''}`);
 }
 
 /**
- * @param {string} [path]
+ * @param {string} path
  * @param {import('./index.d.ts').NavigateOptions} options
  */
 export async function onNavigate(path, options = {}) {
@@ -120,21 +123,35 @@ export async function onNavigate(path, options = {}) {
 	const matchPath = stripBase(path || globalThis.location.pathname);
 	const { match, layouts, hooks, meta: newMeta, params: newParams } = matchRoute(matchPath, routes);
 
-	for (const { beforeLoad } of hooks) {
+	let errorHooks = [];
+	for (const hook of hooks) {
 		try {
+			const { beforeLoad } = hook;
+			errorHooks.push(hook);
 			pendingNavigationIndex = currentNavigationIndex;
 			await beforeLoad?.({ pathname: matchPath, meta: newMeta, ...options });
-		} catch {
+		} catch (error) {
+			for (const { onError } of errorHooks) {
+				void onError?.(error, { pathname: matchPath, meta: newMeta, ...options });
+			}
 			return;
 		}
 	}
 
 	const fromBeforeLoadHook = new Error().stack?.includes('beforeLoad');
 
-	const routeComponents = await resolveRouteComponents(match ? [...layouts, match] : layouts);
+	let routeComponents;
+	try {
+		routeComponents = await resolveRouteComponents(match ? [...layouts, match] : layouts);
+	} catch (error) {
+		for (const { onError } of hooks) {
+			void onError?.(error, { pathname: matchPath, meta: newMeta, ...options });
+		}
+		throw error;
+	}
 	if (
 		navigationIndex !== currentNavigationIndex ||
-		(fromBeforeLoadHook && pendingNavigationIndex + 1 !== currentNavigationIndex)
+		(fromBeforeLoadHook && currentNavigationIndex < pendingNavigationIndex)
 	) {
 		return;
 	}
@@ -175,13 +192,13 @@ export function onGlobalClick(event) {
 
 	if (anchor.hasAttribute('target') || anchor.hasAttribute('download')) return;
 
-	const url = new URL(anchor.href);
+	const url = new URL(anchor.href, globalThis.location.origin);
 	const currentOrigin = globalThis.location.origin;
 	if (url.origin !== currentOrigin) return;
 
 	event.preventDefault();
 	const { replace, state, scrollToTop, viewTransition } = anchor.dataset;
-	onNavigate(url.pathname, {
+	void onNavigate(url.pathname, {
 		replace: replace === '' || replace === 'true',
 		search: url.search,
 		state,

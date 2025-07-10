@@ -67,6 +67,8 @@ export type Hooks = {
 	afterLoad?(context: HooksContext): void | Promise<void>;
 	/** A function that will be called when the route is preloaded. */
 	onPreload?(context: HooksContext): void | Promise<void>;
+	/** A function that will be called when the route fails to load. */
+	onError?(error: unknown, context: HooksContext): void | Promise<void>;
 };
 
 export type Routes = {
@@ -100,6 +102,10 @@ export type IsActiveLink = Action<
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface RouteMeta {}
 
+export class Navigation extends Error {
+	constructor(target: string);
+}
+
 export type RouterApi<T extends Routes> = {
 	/**
 	 * Construct a path while ensuring type safety.
@@ -108,12 +114,16 @@ export type RouterApi<T extends Routes> = {
 	 * p('/users');
 	 * // With parameters
 	 * p('/users/:id', { id: 1 });
+	 * // With arbitrary search params
+	 * p('/users/:id?modal=cancel, { id: 1 });
+	 * // With arbitrary anchor
+	 * p('/users/:id#cancel', { id: 1 });
 	 * ```
 	 *
 	 * @param route The route to navigate to.
 	 * @param params The parameters to replace in the route.
 	 */
-	p<U extends Path<T>>(...args: ConstructPathArgs<U>): string;
+	p<U extends PathWithSearchAndHash<T>>(...args: ConstructPathArgs<U>): string;
 
 	/**
 	 * Navigate programmatically to a route.
@@ -133,8 +143,10 @@ export type RouterApi<T extends Routes> = {
 	 *
 	 * @param route The route to navigate to.
 	 * @param options The navigation options.
+	 *
+	 *   Returns an Error for use with `throw navigate(...)` inside hooks.
 	 */
-	navigate<U extends Path<T>>(...args: NavigateArgs<U>): void;
+	navigate<U extends Path<T>>(...args: NavigateArgs<U>): Error;
 
 	/**
 	 * Will return `true` if the given path is active.
@@ -155,7 +167,7 @@ export type RouterApi<T extends Routes> = {
 	 *
 	 * @param path The route to preload.
 	 */
-	preload<U extends Path<T>>(path: U): Promise<void>;
+	preload<U extends PathWithSearchAndHash<T>>(path: U): Promise<void>;
 
 	route: {
 		/**
@@ -190,23 +202,33 @@ export type RouterApi<T extends Routes> = {
 	};
 };
 
+export type AppendSearchAndHash<Path extends string> =
+	`${Path}${'' | `?${string}`}${'' | `#${string}`}`;
+
+export type PathWithSearchAndHash<
+	T extends Routes,
+	AnyParam extends boolean = false,
+> = AppendSearchAndHash<Path<T, AnyParam>>;
+
 export type Path<T extends Routes, AnyParam extends boolean = false> = RemoveParenthesis<
 	RemoveLastSlash<RecursiveKeys<StripNonRoutes<T>, '', AnyParam>>
 >;
 
-export type ConstructPathArgs<T extends string> =
-	PathParams<T> extends never ? [T] : [T, PathParams<T>];
+export type ConstructPathArgs<TPath extends string> = {
+	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path, PathParams<Path>];
+}[TPath];
 
-export type IsActiveArgs<T extends string> =
-	PathParams<T> extends never ? [T] : [T] | [T, PathParams<T>];
+export type IsActiveArgs<TPath extends string> = {
+	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path] | [Path, PathParams<Path>];
+}[TPath];
 
-export type PathParams<T extends string> =
-	ExtractParams<RemoveParenthesis<T>> extends never
+export type PathParams<TPath extends string> =
+	ExtractParams<CleanPathForParams<TPath>> extends never
 		? never
-		: Record<ExtractParams<RemoveParenthesis<T>>, string>;
+		: Record<ExtractParams<CleanPathForParams<TPath>>, string>;
 
-export type AllParams<T extends Routes> = Partial<
-	Record<ExtractParams<RemoveParenthesis<RecursiveKeys<T>>>, string>
+export type AllParams<TRoutes extends Routes> = Partial<
+	Record<ExtractParams<CleanPathForParams<RecursiveKeys<TRoutes>>>, string>
 >;
 
 export type HooksContext = {
@@ -283,6 +305,14 @@ type RemoveLastSlash<T extends string> = T extends '/' ? T : T extends `${infer 
 type RemoveParenthesis<T extends string> = T extends `${infer A}(${infer B})${infer C}`
 	? RemoveParenthesis<`${A}${B}${C}`>
 	: T;
+
+type RemoveSearchAndHash<T extends string> = T extends `${infer Path}?${string}`
+	? RemoveSearchAndHash<Path>
+	: T extends `${infer Path}#${string}`
+		? RemoveSearchAndHash<Path>
+		: T;
+
+type CleanPathForParams<T extends string> = RemoveParenthesis<RemoveSearchAndHash<T>>;
 
 type ExtractParams<T extends string> = T extends `${string}:${infer Param}/${infer Rest}`
 	? Param | ExtractParams<`/${Rest}`>
