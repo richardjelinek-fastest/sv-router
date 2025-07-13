@@ -2,4 +2,4 @@
 'sv-router': patch
 ---
 
-export route type
+Export route type

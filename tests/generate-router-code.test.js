@@ -20,7 +20,7 @@ import Index from '../a/fake/path/index.svelte';
 import PostsStatic from '../a/fake/path/posts.static.svelte';
 import PostsNolayout from '../a/fake/path/posts.(nolayout).svelte';
 
-const routes = Object.freeze({
+const routes = {
   '*notfound': () => import('../a/fake/path/[...notfound].lazy.svelte'),
   '/about': About,
   '/': Index,
@@ -29,7 +29,7 @@ const routes = Object.freeze({
   '/posts/static': PostsStatic,
   '/posts/(nolayout)': PostsNolayout,
   '/posts/comments/:id': () => import('../a/fake/path/posts.comments.[id].lazy.svelte')
-} as const);
+};
 export type Routes = typeof routes;
 export const { p, navigate, isActive, preload, route } = createRouter(routes);`);
 	});
@@ -48,7 +48,7 @@ import postsMeta from '../a/fake/path/posts/meta.svelte';
 import postsCommentsHooks from '../a/fake/path/posts/comments/hooks.svelte';
 import postsCommentsMeta from '../a/fake/path/posts/comments/meta';
 
-const routes = Object.freeze({
+const routes = {
   '*notfound': () => import('../a/fake/path/[...notfound].lazy.svelte'),
   '/about': About,
   '/': Index,
@@ -66,7 +66,7 @@ const routes = Object.freeze({
       'meta': postsCommentsMeta
     }
   }
-} as const);
+};
 export type Routes = typeof routes;
 export const { p, navigate, isActive, preload, route } = createRouter(routes);`);
 	});
@@ -242,7 +242,7 @@ import PostsCommentsCommentId from './routes/posts/comments/[commentId].svelte';
 import postsCommentsHooks from './routes/posts/comments/hooks.svelte';
 import postsCommentsMeta from './routes/posts/comments/meta.svelte';
 
-const routes = Object.freeze({
+const routes = {
   '/': Index,
   '/about': About,
   '/posts': {
@@ -259,7 +259,7 @@ const routes = Object.freeze({
     }
   },
   '*notfound': () => import('./routes/[...notfound].lazy.svelte')
-} as const);
+};
 export type Routes = typeof routes;
 export const { p, navigate, isActive, preload, route } = createRouter(routes);`);
 	});
@@ -272,7 +272,7 @@ import postsMeta from './routes/posts/meta';
 import postsCommentsHooks from './routes/posts/comments/hooks.svelte';
 import postsCommentsMeta from './routes/posts/comments/meta.svelte';
 
-const routes = Object.freeze({
+const routes = {
   '/': () => import('./routes/index.svelte'),
   '/about': () => import('./routes/about.svelte'),
   '/posts': {
@@ -289,7 +289,7 @@ const routes = Object.freeze({
     }
   },
   '*notfound': () => import('./routes/[...notfound].lazy.svelte')
-} as const);
+};
 export type Routes = typeof routes;
 export const { p, navigate, isActive, preload, route } = createRouter(routes);`);
 	});
