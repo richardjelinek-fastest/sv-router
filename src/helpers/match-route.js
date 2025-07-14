@@ -109,7 +109,7 @@ export function matchRoute(pathname, routes) {
 
 			const nestedPathname = '/' + pathParts.slice(index + 1).join('/');
 			const result = matchRoute(nestedPathname, routeMatch);
-			if (result) {
+			if (result.match) {
 				match = result.match;
 				params = { ...params, ...result.params };
 				hooks.push(...result.hooks);
@@ -119,6 +119,8 @@ export function matchRoute(pathname, routes) {
 				} else {
 					layouts.push(...result.layouts);
 				}
+			} else {
+				continue;
 			}
 			break outer;
 		}
@@ -141,7 +143,7 @@ export function sortRoutes(routes) {
  */
 function getRoutePriority(route) {
 	if (route === '' || route === '/') return 1;
-	if (route.startsWith('*')) return 4;
+	if (route.includes('*')) return 4;
 	if (route.includes(':')) return 3;
 	return 2;
 }

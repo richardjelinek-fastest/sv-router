@@ -153,7 +153,7 @@ export type RouterApi<T extends Routes> = {
 	 */
 	isActive: {
 		<U extends Path<T>>(...args: IsActiveArgs<U>): boolean;
-		startsWith<U extends Path<T>>(...args: IsActiveArgs<U>): boolean;
+		startsWith<U extends Path<T>>(...args: IsActiveArgs<U, true>): boolean;
 	};
 
 	/**
@@ -200,19 +200,30 @@ export type Path<T extends Routes, AnyParam extends boolean = false> = RemovePar
 	RemoveLastSlash<RecursiveKeys<StripNonRoutes<T>, '', AnyParam>>
 >;
 
-export type ConstructPathArgs<T extends string> =
-	PathParams<T> extends never ? [T] : [T, PathParams<T>];
+export type ConstructPathArgs<TPath extends string> = {
+	[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path, PathParams<Path>];
+}[TPath];
 
-export type IsActiveArgs<T extends string> =
-	PathParams<T> extends never ? [T] : [T] | [T, PathParams<T>];
+export type IsActiveArgs<
+	TPath extends string,
+	StartsWith extends boolean = false,
+> = StartsWith extends true
+	? {
+			[Path in TPath]: PathParams<Path> extends never
+				? [PathPrefixes<Path>]
+				: [PathPrefixes<Path>] | [PathPrefixes<Path>, PathParams<Path>];
+		}[TPath]
+	: {
+			[Path in TPath]: PathParams<Path> extends never ? [Path] : [Path] | [Path, PathParams<Path>];
+		}[TPath];
 
-export type PathParams<T extends string> =
-	ExtractParams<RemoveParenthesis<T>> extends never
+export type PathParams<TPath extends string> =
+	ExtractParams<RemoveParenthesis<TPath>> extends never
 		? never
-		: Record<ExtractParams<RemoveParenthesis<T>>, string>;
+		: Record<ExtractParams<RemoveParenthesis<TPath>>, string>;
 
-export type AllParams<T extends Routes> = Partial<
-	Record<ExtractParams<RemoveParenthesis<RecursiveKeys<T>>>, string>
+export type AllParams<TRoutes extends Routes> = Partial<
+	Record<ExtractParams<RemoveParenthesis<RecursiveKeys<TRoutes>>>, string>
 >;
 
 export type HooksContext = {
@@ -299,3 +310,15 @@ type ExtractParams<T extends string> = T extends `${string}:${infer Param}/${inf
 				? never
 				: Param
 			: never;
+
+type PathPrefixes<T extends string, Acc extends string = ''> = T extends '/'
+	? '/'
+	: T extends `/${infer Segment}/${infer Rest}`
+		? Acc extends ''
+			? PathPrefixes<`/${Rest}`, `/${Segment}`> | `/${Segment}`
+			: PathPrefixes<`/${Rest}`, `${Acc}/${Segment}`> | `${Acc}/${Segment}` | Acc
+		: T extends `/${infer Segment}`
+			? Acc extends ''
+				? `/${Segment}`
+				: `${Acc}/${Segment}` | Acc
+			: Acc;
