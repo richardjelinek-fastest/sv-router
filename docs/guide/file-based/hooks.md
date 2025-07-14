@@ -56,7 +56,7 @@ async function beforeLoad() {
 All hooks receive a context object with information about the current navigation, which you can use to block navigation for example:
 
 ```ts
-function beforeLoad({ pathname, search, hash, state, replace }) {
+function beforeLoad({ pathname, search, hash, state, replace, meta }) {
 	if (!admin && pathname !== '/') {
 		throw navigate('/');
 	}

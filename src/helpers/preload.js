@@ -7,9 +7,9 @@ import { resolveRouteComponents } from './utils.js';
  * @param {import('../index.d.ts').NavigateOptions} [options]
  */
 export async function preload(routes, path, options) {
-	const { match, layouts, hooks } = matchRoute(path, routes);
+	const { match, layouts, hooks, meta } = matchRoute(path, routes);
 	for (const { onPreload } of hooks) {
-		onPreload?.({ pathname: path, ...options });
+		void onPreload?.({ pathname: path, meta, ...options });
 	}
 	await resolveRouteComponents(match ? [...layouts, match] : layouts);
 }
