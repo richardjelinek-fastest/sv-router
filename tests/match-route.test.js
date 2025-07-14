@@ -20,6 +20,8 @@ const Layout1 = () => 'Layout1';
 const Layout2 = () => 'Layout2';
 /** @type {import('svelte').Component} */
 const NoLayout = () => 'NoLayout';
+/** @type {import('svelte').Component} */
+const John = () => 'John';
 const Hooks1 = Symbol();
 const Hooks2 = Symbol();
 
@@ -33,6 +35,7 @@ describe('matchRoute', () => {
 				'/posts/static': StaticPost,
 				'/posts/:id': DynamicPost,
 				'/posts/:id/comments/:commentId': DynamicPostComment,
+				'/users/john': John,
 				'/users/*': UserNotFound,
 				'*rest': PageNotFound,
 			},
@@ -47,6 +50,7 @@ describe('matchRoute', () => {
 				'*rest': PageNotFound,
 				'/posts/:id': DynamicPost,
 				'/': Home,
+				'/users/john': John,
 			},
 		},
 		{
@@ -76,6 +80,7 @@ describe('matchRoute', () => {
 					},
 				},
 				'/users': {
+					john: John,
 					'*': UserNotFound,
 					layout: Layout1,
 				},
@@ -111,6 +116,7 @@ describe('matchRoute', () => {
 				'/users': {
 					'*': UserNotFound,
 					layout: Layout1,
+					john: John,
 				},
 				'/': Home,
 			},
@@ -222,9 +228,11 @@ describe('matchRoute', () => {
 			});
 
 			it('should break out of layouts with catch-all', () => {
-				/** @type {import('../src/index.d.ts').Routes} */ (routes['/users'])['(*foo)'] = NoLayout;
+				/** @type {import('../src/index.d.ts').Routes} */ (routes['/users'])['(*foo)'] =
+					UserNotFound;
+				delete (/** @type {import('../src/index.d.ts').Routes} */ (routes['/users'])['*']);
 				const { match, layouts, params } = matchRoute('/users/nolayout', routes);
-				expect(match).toEqual(NoLayout);
+				expect(match).toEqual(UserNotFound);
 				expect(layouts).toEqual([]);
 				expect(params).toEqual({ foo: 'nolayout' });
 				delete (/** @type {import('../src/index.d.ts').Routes} */ (routes['/users'])['(*foo)']);
@@ -257,6 +265,12 @@ describe('matchRoute', () => {
 				});
 			});
 		}
+
+		it('should fall back to root catch-all route when nested catch-all is not found', () => {
+			delete routes['/users/*'];
+			const { match } = matchRoute('/users/notfound', routes);
+			expect(match).toEqual(PageNotFound);
+		});
 
 		it('should not match any route', () => {
 			delete routes['*rest'];
