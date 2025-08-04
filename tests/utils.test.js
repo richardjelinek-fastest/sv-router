@@ -1,3 +1,4 @@
+import { base } from '../src/create-router.svelte.js';
 import { constructPath, join } from '../src/helpers/utils.js';
 
 describe('constructPath', () => {
@@ -14,6 +15,26 @@ describe('constructPath', () => {
 	it('should replace multiple params in the path', () => {
 		const result = constructPath('/posts/:id/comments/:commentId', { id: '123', commentId: '456' });
 		expect(result).toBe('/posts/123/comments/456');
+	});
+});
+
+describe('constructPath with base="#"', () => {
+	it('should return the original path when no params are provided', () => {
+		base.name = '#';
+		const result = constructPath('/posts');
+		expect(result).toBe('http://localhost:3000/#/posts');
+	});
+
+	it('should replace a single param in the path', () => {
+		base.name = '#';
+		const result = constructPath('/posts/:id', { id: '123' });
+		expect(result).toBe('http://localhost:3000/#/posts/123');
+	});
+
+	it('should replace multiple params in the path', () => {
+		base.name = '#';
+		const result = constructPath('/posts/:id/comments/:commentId', { id: '123', commentId: '456' });
+		expect(result).toBe('http://localhost:3000/#/posts/123/comments/456');
 	});
 });
 

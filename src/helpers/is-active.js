@@ -7,7 +7,7 @@ import { constructPath, join } from './utils.js';
  * @returns {boolean}
  */
 export function isActive(pathname, params) {
-	const p = base.name ? join(base.name, pathname) : pathname;
+	const p = base.name && base.name !== '#' ? join(base.name, pathname) : pathname;
 	return compare((a, b) => a === b, p, params);
 }
 
@@ -17,7 +17,7 @@ export function isActive(pathname, params) {
  * @returns {boolean}
  */
 isActive.startsWith = (pathname, params) => {
-	const p = base.name ? join(base.name, pathname) : pathname;
+	const p = base.name && base.name !== '#' ? join(base.name, pathname) : pathname;
 	return compare((a, b) => a.startsWith(b), p, params);
 };
 
@@ -33,11 +33,15 @@ function compare(compareFn, pathname, params) {
 	}
 
 	if (params) {
-		return compareFn(location.pathname, constructPath(pathname, params));
+		if (base.name === '#') {
+			return compareFn(location.pathname, new URL(constructPath(pathname, params)).hash.slice(1));
+		} else {
+			return compareFn(location.pathname, constructPath(pathname, params));
+		}
 	}
 
 	const pathParts = pathname.split('/').slice(1);
-	const routeParts = location.pathname.split('/').slice(1);
+	let routeParts = location.pathname.split('/').slice(1);
 	if (pathParts.length > routeParts.length) {
 		return false;
 	}
