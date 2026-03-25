@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, vi } from 'vitest';
-import { base, blockNavigation } from '../../src/create-router.svelte.js';
+import { base, blockNavigation, onBeforeUnload } from '../../src/create-router.svelte.js';
 import { searchParams } from '../../src/search-params.svelte.js';
 import App, { isActive, navigate, onPreloadMock, route } from './App.test.svelte';
 
@@ -436,12 +436,88 @@ describe('blockNavigation', () => {
 		await waitFor(() => {
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
-		blockNavigation(() => false);
+		const clear = blockNavigation(() => false);
 		await userEvent.click(screen.getByText('About'));
 		await waitFor(() => {
 			expect(location.pathname).toBe('/');
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
+		clear();
+	});
+
+	it('should block link navigation when one of callbacks returns false', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation(() => false);
+		const clear2 = blockNavigation(() => true);
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/');
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		clear();
+		clear2();
+	});
+
+	it('should block link navigation when async callback returns false', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation(async () => {
+			return await new Promise((resolve) => {
+				setTimeout(() => resolve(false), 250);
+			});
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/');
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		clear();
+	});
+
+	it('should allow link navigation when async callback returns true', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation(async () => {
+			return await new Promise((resolve) => {
+				setTimeout(() => resolve(true), 250);
+			});
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+			expect(screen.getByText('About Us')).toBeInTheDocument();
+		});
+		clear();
+	});
+
+	it('should block link navigation when object callback returns false after promise resolves', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation({
+			beforeUnload() {
+				return true;
+			},
+			async onNavigate() {
+				return await new Promise((resolve) => {
+					setTimeout(() => resolve(false), 250);
+				});
+			},
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/');
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		clear();
 	});
 
 	it('should block programmatic navigation when callback returns false', async () => {
@@ -449,12 +525,13 @@ describe('blockNavigation', () => {
 		await waitFor(() => {
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
-		blockNavigation(() => false);
+		const clear = blockNavigation(() => false);
 		navigate('/about');
 		await waitFor(() => {
 			expect(location.pathname).toBe('/');
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
+		clear();
 	});
 
 	it('should allow navigation when callback returns true', async () => {
@@ -462,7 +539,66 @@ describe('blockNavigation', () => {
 		await waitFor(() => {
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
-		blockNavigation(() => true);
+		const clear = blockNavigation(() => true);
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+			expect(screen.getByText('About Us')).toBeInTheDocument();
+		});
+		clear();
+	});
+
+	it('should allow navigation when all callbacks return true', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation(() => true);
+		const clear2 = blockNavigation(() => true);
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+			expect(screen.getByText('About Us')).toBeInTheDocument();
+		});
+		clear();
+		clear2();
+	});
+
+	it('should allow navigation when callback returns true after promise resolves', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation({
+			beforeUnload() {
+				return true;
+			},
+			async onNavigate() {
+				return await new Promise((resolve) => {
+					setTimeout(() => resolve(true), 250);
+				});
+			},
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+			expect(screen.getByText('About Us')).toBeInTheDocument();
+		});
+		clear();
+	});
+
+	it('should unblock navigation after cleanup function is called', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		const clear = blockNavigation(() => false);
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/');
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		clear();
 		await userEvent.click(screen.getByText('About'));
 		await waitFor(() => {
 			expect(location.pathname).toBe('/about');
@@ -470,21 +606,20 @@ describe('blockNavigation', () => {
 		});
 	});
 
-	it('should clear blocker after allowing navigation', async () => {
+	it('should not add extra history entries on programmatic navigation with blockers', async () => {
 		render(App);
 		await waitFor(() => {
 			expect(screen.getByText('Welcome')).toBeInTheDocument();
 		});
-		blockNavigation(() => true);
-		await userEvent.click(screen.getByText('About'));
+		const clear = blockNavigation(() => true);
+		const before = history.length;
+		navigate('/about');
 		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
 			expect(screen.getByText('About Us')).toBeInTheDocument();
 		});
-		await userEvent.click(screen.getByText('Home'));
-		await waitFor(() => {
-			expect(location.pathname).toBe('/');
-			expect(screen.getByText('Welcome')).toBeInTheDocument();
-		});
+		expect(history.length).toBe(before + 1);
+		clear();
 	});
 
 	it('should block popstate navigation when callback returns false', async () => {
@@ -496,11 +631,103 @@ describe('blockNavigation', () => {
 		await waitFor(() => {
 			expect(location.pathname).toBe('/about');
 		});
-		blockNavigation(() => false);
+		const clear = blockNavigation(() => false);
 		globalThis.dispatchEvent(new PopStateEvent('popstate'));
 		await waitFor(() => {
 			expect(location.pathname).toBe('/about');
 			expect(screen.getByText('About Us')).toBeInTheDocument();
 		});
+		clear();
+	});
+
+	it('should not corrupt history when blocking popstate back navigation', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+		});
+		const lengthBefore = history.length;
+		const clear = blockNavigation(() => false);
+		history.back();
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+			expect(screen.getByText('About Us')).toBeInTheDocument();
+		});
+		expect(history.length).toBe(lengthBefore);
+		clear();
+	});
+
+	it('should allow popstate navigation after blocker returns true', async () => {
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		await userEvent.click(screen.getByText('About'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/about');
+		});
+		const clear = blockNavigation(() => true);
+		// Simulate back navigation: change URL and dispatch popstate with previous index
+		const prevIndex = (history.state?._routerIndex ?? 1) - 1;
+		history.replaceState({ _routerIndex: prevIndex, _userState: null }, '', '/');
+		globalThis.dispatchEvent(new PopStateEvent('popstate'));
+		await waitFor(() => {
+			expect(location.pathname).toBe('/');
+			expect(screen.getByText('Welcome')).toBeInTheDocument();
+		});
+		clear();
+	});
+
+	it('should call event.preventDefault when object blocker beforeUnload returns false', () => {
+		const clear = blockNavigation({
+			beforeUnload() {
+				return false;
+			},
+			onNavigate() {
+				return true;
+			},
+		});
+		const event = new Event('beforeunload');
+		event.preventDefault = vi.fn();
+		onBeforeUnload(/** @type {BeforeUnloadEvent} */ (event));
+		expect(event.preventDefault).toHaveBeenCalled();
+		clear();
+	});
+
+	it('should not call event.preventDefault when object blocker beforeUnload returns true', () => {
+		const clear = blockNavigation({
+			beforeUnload() {
+				return true;
+			},
+			onNavigate() {
+				return true;
+			},
+		});
+		const event = new Event('beforeunload');
+		event.preventDefault = vi.fn();
+		onBeforeUnload(/** @type {BeforeUnloadEvent} */ (event));
+		expect(event.preventDefault).not.toHaveBeenCalled();
+		clear();
+	});
+
+	it('should ignore function-form blockers in onBeforeUnload', () => {
+		const clear = blockNavigation(() => false);
+		const event = new Event('beforeunload');
+		event.preventDefault = vi.fn();
+		onBeforeUnload(/** @type {BeforeUnloadEvent} */ (event));
+		expect(event.preventDefault).not.toHaveBeenCalled();
+		clear();
+	});
+
+	it('should ignore async function-form blockers in onBeforeUnload', () => {
+		const clear = blockNavigation(async () => false);
+		const event = new Event('beforeunload');
+		event.preventDefault = vi.fn();
+		onBeforeUnload(/** @type {BeforeUnloadEvent} */ (event));
+		expect(event.preventDefault).not.toHaveBeenCalled();
+		clear();
 	});
 });

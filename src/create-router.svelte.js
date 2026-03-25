@@ -43,8 +43,17 @@ let params = $state({ value: {} });
 
 let meta = $state({ value: {} });
 
-/** @type {(() => boolean) | null} */
-let navigationBlocker = null;
+/**
+ * @type {Map<
+ * 	number,
+ * 	| (() => boolean | Promise<boolean>)
+ * 	| { beforeUnload?(): boolean; onNavigate(): boolean | Promise<boolean> }
+ * >}
+ */
+const navigationBlockers = new Map();
+
+let historyIndex = 0;
+let skipNextPopstate = false;
 
 /** @type {AbortController | null} */
 let currentNavigationController = null;
@@ -61,15 +70,32 @@ export function init(basename) {
 			base.name = '#';
 			if (!globalThis.location.href.includes('#')) {
 				url.hash = '/';
-				history.replaceState(history.state || {}, '', url.toString());
+				history.replaceState(
+					{ _routerIndex: historyIndex, _userState: history.state ?? null },
+					'',
+					url.toString(),
+				);
 			}
 		} else {
 			base.name = (basename.startsWith('/') ? '' : '/') + basename;
 			if (!url.pathname.startsWith(base.name)) {
 				url.pathname = join(base.name, url.pathname);
-				history.replaceState(history.state || {}, '', url.toString());
+				history.replaceState(
+					{ _routerIndex: historyIndex, _userState: history.state ?? null },
+					'',
+					url.toString(),
+				);
 			}
 		}
+	}
+	if (history.state?._routerIndex === undefined) {
+		history.replaceState(
+			{ _routerIndex: historyIndex, _userState: history.state ?? null },
+			'',
+			globalThis.location.href,
+		);
+	} else {
+		historyIndex = history.state._routerIndex;
 	}
 	Object.assign(location, updatedLocation());
 }
@@ -151,6 +177,16 @@ async function navigate(path, options = {}) {
 	return new Navigation(`${path}${serializeSearch(options?.search ?? '')}${options?.hash ?? ''}`);
 }
 
+/** @param {BeforeUnloadEvent} event */
+export function onBeforeUnload(event) {
+	for (const blocker of navigationBlockers.values()) {
+		if (typeof blocker !== 'object' || !blocker.beforeUnload) continue;
+		if (!blocker.beforeUnload()) {
+			event.preventDefault();
+		}
+	}
+}
+
 /**
  * @param {string} [path]
  * @param {import('./index.d.ts').NavigateOptions} options
@@ -160,20 +196,26 @@ export async function onNavigate(path, options = {}) {
 		throw new Error('Router not initialized: `createRouter` was not called.');
 	}
 
-	if (navigationBlocker) {
-		if (!navigationBlocker()) {
-			const url = new URL(globalThis.location.toString());
-			url.search = location.search;
-			url.hash = location.hash;
-			if (base.name === '#') {
-				url.hash = location.pathname;
-			} else {
-				url.pathname = location.pathname;
+	if (!path && skipNextPopstate) {
+		skipNextPopstate = false;
+		return;
+	}
+
+	if (navigationBlockers.size > 0) {
+		const popstateDelta = path ? 0 : historyIndex - (history.state?._routerIndex ?? 0);
+		for (const blocker of navigationBlockers.values()) {
+			const shouldNavigate = typeof blocker === 'object' ? blocker.onNavigate : blocker;
+			if (!(await shouldNavigate())) {
+				if (!path && popstateDelta !== 0) {
+					skipNextPopstate = true;
+					history.go(popstateDelta);
+				}
+				return;
 			}
-			globalThis.history.replaceState($state.snapshot(location.state) || {}, '', url.toString());
-			return;
 		}
-		navigationBlocker = null;
+		if (!path) {
+			historyIndex = history.state?._routerIndex ?? historyIndex;
+		}
 	}
 
 	if (pendingController && pendingController !== currentNavigationController) {
@@ -233,7 +275,12 @@ export async function onNavigate(path, options = {}) {
 			url.pathname = path;
 		}
 		const historyMethod = options.replace ? 'replaceState' : 'pushState';
-		globalThis.history[historyMethod](options.state || {}, '', url.toString());
+		if (historyMethod === 'pushState') historyIndex++;
+		globalThis.history[historyMethod](
+			{ _routerIndex: historyIndex, _userState: options.state ?? null },
+			'',
+			url.toString(),
+		);
 		syncSearchParams(search);
 	} else {
 		syncSearchParams(globalThis.location.search);
@@ -320,7 +367,16 @@ export function onGlobalClick(event) {
 	});
 }
 
-/** @param {() => boolean} callback */
+let navigationBlockId = 0;
+/**
+ * @param {(() => boolean | Promise<boolean>)
+ * 	| { beforeUnload?(): boolean; onNavigate(): boolean | Promise<boolean> }} callback
+ * @returns {() => void}
+ */
 export function blockNavigation(callback) {
-	navigationBlocker = callback;
+	const id = navigationBlockId++;
+	navigationBlockers.set(id, callback);
+	return () => {
+		navigationBlockers.delete(id);
+	};
 }

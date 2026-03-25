@@ -43,13 +43,41 @@ export function serializeSearch(search: Search): string | undefined;
 export function createRouter<T extends Routes>(r: T): RouterApi<T>;
 
 /**
- * Block navigation until the callback returns `false`.
+ * Blocks navigation as long as the callback returns `false`.
+ *
+ * Returns a function that clears the navigation block.
  *
  * ```js
- * blockNavigation(() => confirm('Are you sure you want to leave?'));
+ * $effect(() => blockNavigation(() => confirm('Are you sure you want to leave?')));
+ * ```
+ *
+ * The callback can also be async:
+ *
+ * ```js
+ * $effect(() => blockNavigation(async () => await showConfirmModal()));
+ * ```
+ *
+ * If you also need to block tab close, use the object form to handle blocking for navigation and
+ * site unloading separately (site unloading cannot be blocked asynchronously):
+ *
+ * ```js
+ * $effect(() =>
+ * 	blockNavigation({
+ * 		beforeUnload() {
+ * 			return false;
+ * 		},
+ * 		async onNavigate() {
+ * 			return await askInModal();
+ * 		},
+ * 	}),
+ * );
  * ```
  */
-export function blockNavigation(callback: () => boolean): void;
+export function blockNavigation(
+	callback:
+		| (() => boolean | Promise<boolean>)
+		| { beforeUnload?(): boolean; onNavigate(): boolean | Promise<boolean> },
+): () => void;
 
 /**
  * The component that will render the current route. You can pass a `base` prop to set the base path
