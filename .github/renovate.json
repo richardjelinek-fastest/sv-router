@@ -2,12 +2,19 @@
 	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:recommended", "group:allNonMajor"],
 	"rangeStrategy": "bump",
-	"ignorePaths": ["**/create/templates/**"],
+	"gitIgnoredAuthors": ["github-actions[bot]@users.noreply.github.com"],
 	"packageRules": [
 		{
 			"matchFileNames": ["package.json"],
 			"matchPackageNames": ["svelte"],
 			"enabled": false
+		},
+		{
+			"matchFileNames": ["create/templates/**"],
+			"groupName": "template dependencies",
+			"commitMessagePrefix": "chore(templates):",
+			"commitMessageAction": "update",
+			"separateMajorMinor": false
 		}
 	]
 }
