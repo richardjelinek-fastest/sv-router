@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { on } from 'svelte/events';
 	import {
 		componentTree,
@@ -12,10 +13,9 @@
 	/** @type {{ base?: string }} */
 	let { base: basename } = $props();
 
-	// svelte-ignore state_referenced_locally
-	init(basename);
+	init(untrack(() => basename));
 
-	onNavigate();
+	onNavigate(undefined, { search: location.search, hash: location.hash, state: history.state });
 
 	$effect(() => {
 		const cleanup = [
