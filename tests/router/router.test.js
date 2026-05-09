@@ -5,6 +5,7 @@ import { base, blockNavigation, onBeforeUnload } from '../../src/create-router.s
 import { searchParams } from '../../src/search-params.svelte.js';
 import App, {
 	afterLoadMock,
+	beforeLoadMock,
 	isActive,
 	navigate,
 	onErrorMock,
@@ -18,6 +19,8 @@ describe('router', () => {
 	beforeEach(() => {
 		location.pathname = '/';
 		location.search = '';
+		location.hash = '';
+		history.replaceState(null, '', location.href);
 		base.name = undefined;
 	});
 
@@ -223,6 +226,28 @@ describe('router', () => {
 		});
 	});
 
+	it('should pass current search, hash, and state to beforeLoad on initial load', async () => {
+		beforeLoadMock.mockClear();
+		location.pathname = '/initial-load';
+		location.search = '?foo=bar&n=1';
+		location.hash = '#section';
+		history.replaceState({ user: 'data' }, '', location.href);
+
+		render(App);
+
+		await waitFor(() => {
+			expect(screen.getByText('Initial Load Page')).toBeInTheDocument();
+		});
+		expect(beforeLoadMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				pathname: '/initial-load',
+				search: { foo: 'bar', n: 1 },
+				hash: '#section',
+				state: { user: 'data' },
+			}),
+		);
+	});
+
 	it('should call onError when beforeLoad throws a non-Navigation error', async () => {
 		onErrorMock.mockClear();
 		render(App);
@@ -366,6 +391,8 @@ describe('router (navigation options)', () => {
 	beforeEach(() => {
 		location.pathname = '/';
 		location.search = '';
+		location.hash = '';
+		history.replaceState(null, '', location.href);
 		base.name = undefined;
 	});
 
@@ -494,6 +521,8 @@ describe('blockNavigation', () => {
 	beforeEach(() => {
 		location.pathname = '/';
 		location.search = '';
+		location.hash = '';
+		history.replaceState(null, '', location.href);
 		base.name = undefined;
 	});
 
@@ -829,6 +858,8 @@ describe('router (dynamic routes)', () => {
 	beforeEach(() => {
 		location.pathname = '/';
 		location.search = '';
+		location.hash = '';
+		history.replaceState(null, '', location.href);
 		base.name = undefined;
 	});
 

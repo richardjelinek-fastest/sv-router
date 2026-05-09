@@ -8,6 +8,7 @@
 		onGlobalClick,
 		onNavigate,
 	} from './create-router.svelte.js';
+	import { getUserState } from './helpers/utils.js';
 	import RecursiveComponentTree from './RecursiveComponentTree.svelte';
 
 	/** @type {{ base?: string }} */
@@ -15,7 +16,11 @@
 
 	init(untrack(() => basename));
 
-	onNavigate(undefined, { search: location.search, hash: location.hash, state: history.state });
+	onNavigate(undefined, {
+		search: location.search,
+		hash: location.hash,
+		state: getUserState(history.state),
+	});
 
 	$effect(() => {
 		const cleanup = [
