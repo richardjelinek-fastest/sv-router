@@ -104,7 +104,7 @@ export function stripBase(pathname) {
 }
 
 /** @param {any} state */
-function getUserState(state) {
+export function getUserState(state) {
 	if (state && '_userState' in state) {
 		return state._userState;
 	}

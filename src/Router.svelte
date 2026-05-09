@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { on } from 'svelte/events';
 	import {
 		componentTree,
@@ -7,15 +8,19 @@
 		onGlobalClick,
 		onNavigate,
 	} from './create-router.svelte.js';
+	import { getUserState } from './helpers/utils.js';
 	import RecursiveComponentTree from './RecursiveComponentTree.svelte';
 
 	/** @type {{ base?: string }} */
 	let { base: basename } = $props();
 
-	// svelte-ignore state_referenced_locally
-	init(basename);
+	init(untrack(() => basename));
 
-	onNavigate();
+	onNavigate(undefined, {
+		search: location.search,
+		hash: location.hash,
+		state: getUserState(history.state),
+	});
 
 	$effect(() => {
 		const cleanup = [
