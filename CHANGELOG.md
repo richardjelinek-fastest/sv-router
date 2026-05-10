@@ -1,5 +1,11 @@
 # sv-router
 
+## 0.16.1
+
+### Patch Changes
+
+- 8406e97: Fix empty search and hash in hooks context on page load
+
 ## 0.16.0
 
 ### Minor Changes
