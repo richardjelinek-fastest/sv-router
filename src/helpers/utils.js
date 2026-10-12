@@ -223,3 +223,16 @@ export function parseSearchValue(value) {
 	}
 	return value;
 }
+
+
+/**
+ * @param {import('svelte').Component[]} current
+ * @param {import('svelte').Component[]} next
+ */
+export function getSharedLength(current, next) {
+	let length = 0;
+	while (length < current.length && current[length] === next[length]) {
+		length++;
+	}
+	return length;
+}

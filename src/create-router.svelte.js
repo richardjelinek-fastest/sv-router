@@ -1,11 +1,12 @@
 import { BROWSER, DEV } from 'esm-env';
-import { tick } from 'svelte';
+import { flushSync, tick } from 'svelte';
 import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preload, preloadOnHover } from './helpers/preload.js';
 import {
 	constructPath,
 	constructUrl,
+	getSharedLength,
 	join,
 	parseSearch,
 	resolveRouteComponents,
@@ -297,15 +298,6 @@ export async function onNavigate(path, options = {}) {
 	}
 	if (signal.aborted) return currentNavigationPromise;
 
-	// Unmount the components the next route does not share before its params land, otherwise they
-	// stay mounted while the next route suspends on async rendering and re-run against its params.
-	const sharedLength = getSharedLength(componentTree.value, routeComponents);
-	if (sharedLength < componentTree.value.length) {
-		componentTree.value = componentTree.value.slice(0, sharedLength);
-		await tick();
-		if (signal.aborted) return currentNavigationPromise;
-	}
-
 	if (path) {
 		const search = serializeSearch(options.search);
 		const url = new URL(globalThis.location.toString());
@@ -330,16 +322,28 @@ export async function onNavigate(path, options = {}) {
 		syncSearchParams(globalThis.location.search);
 	}
 
-	if (options.viewTransition && document.startViewTransition !== undefined) {
-		document.startViewTransition(() => {
-			componentTree.value = routeComponents;
-		});
-	} else {
+	const updateRoute = () => {
+		if (signal.aborted) return;
+		// Remove departing components before publishing the next route's params. For view
+		// transitions, this runs after the browser has captured the outgoing DOM.
+		const sharedLength = getSharedLength(componentTree.value, routeComponents);
+		if (sharedLength < componentTree.value.length) {
+			flushSync(() => {
+				componentTree.value = componentTree.value.slice(0, sharedLength);
+			});
+		}
 		componentTree.value = routeComponents;
+		params.value = newParams;
+		meta.value = newMeta;
+		Object.assign(location, updatedLocation());
+		return tick();
+	};
+
+	if (options.viewTransition && document.startViewTransition !== undefined) {
+		document.startViewTransition(updateRoute);
+	} else {
+		updateRoute();
 	}
-	params.value = newParams;
-	meta.value = newMeta;
-	Object.assign(location, updatedLocation());
 
 	if (options.scrollToTop !== false) {
 		window.scrollTo({ top: 0, left: 0, behavior: options.scrollToTop });
@@ -348,18 +352,6 @@ export async function onNavigate(path, options = {}) {
 	for (const { afterLoad } of hooks) {
 		void afterLoad?.(hooksContext);
 	}
-}
-
-/**
- * @param {import('svelte').Component[]} current
- * @param {import('svelte').Component[]} next
- */
-function getSharedLength(current, next) {
-	let length = 0;
-	while (length < current.length && current[length] === next[length]) {
-		length++;
-	}
-	return length;
 }
 
 /** @param {string} [path] */
