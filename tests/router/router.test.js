@@ -183,22 +183,22 @@ describe('router', () => {
 			}),
 		});
 
-			await navigate('/suspending', { viewTransition: true });
-			expect(document.startViewTransition).toHaveBeenCalledOnce();
-			expect(screen.getByText('User page 123')).toBeInTheDocument();
-			expect(route.params).toEqual({ id: '123' });
-			expect(userPageParamsMock).not.toHaveBeenCalled();
+		await navigate('/suspending', { viewTransition: true });
+		expect(document.startViewTransition).toHaveBeenCalledOnce();
+		expect(screen.getByText('User page 123')).toBeInTheDocument();
+		expect(route.params).toEqual({ id: '123' });
+		expect(userPageParamsMock).not.toHaveBeenCalled();
 
-			await updateRoute?.();
-			outsideState.count++;
-			await waitFor(() => {
-				expect(screen.getByText('Suspending Page')).toBeInTheDocument();
-			});
-			expect(userPageParamsMock).not.toHaveBeenCalled();
-			expect(route.params).toEqual({});
+		await updateRoute?.();
+		outsideState.count++;
+		await waitFor(() => {
+			expect(screen.getByText('Suspending Page')).toBeInTheDocument();
+		});
+		expect(userPageParamsMock).not.toHaveBeenCalled();
+		expect(route.params).toEqual({});
 
-			if (previousStartViewTransition) {
-				Object.defineProperty(document, 'startViewTransition', previousStartViewTransition);
+		if (previousStartViewTransition) {
+			Object.defineProperty(document, 'startViewTransition', previousStartViewTransition);
 		}
 	});
 

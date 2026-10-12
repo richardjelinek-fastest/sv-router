@@ -224,7 +224,6 @@ export function parseSearchValue(value) {
 	return value;
 }
 
-
 /**
  * @param {import('svelte').Component[]} current
  * @param {import('svelte').Component[]} next
