@@ -12,9 +12,11 @@ import App, {
 	navigate,
 	onErrorMock,
 	onPreloadMock,
+	outsideState,
 	paramsBeforeLoadMock,
 	resolveMeta,
 	route,
+	userPageParamsMock,
 } from './App.test.svelte';
 
 window.scrollTo = vi.fn();
@@ -139,6 +141,65 @@ describe('router', () => {
 			expect(screen.getByText('User page 456')).toBeInTheDocument();
 		});
 		expect(route.params).toEqual({ id: '456' });
+	});
+
+	it('should not rerun the previous route with the params of a suspending route', async () => {
+		location.pathname = '/user/123';
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('User page 123')).toBeInTheDocument();
+		});
+		userPageParamsMock.mockClear();
+
+		const navigation = navigate('/suspending');
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		outsideState.count++;
+		await navigation;
+		await waitFor(() => {
+			expect(screen.getByText('Suspending Page')).toBeInTheDocument();
+		});
+		expect(userPageParamsMock).not.toHaveBeenCalled();
+	});
+
+	it('should preserve the outgoing DOM and params until the view transition update', async () => {
+		location.pathname = '/user/123';
+		render(App);
+		await waitFor(() => {
+			expect(screen.getByText('User page 123')).toBeInTheDocument();
+		});
+		userPageParamsMock.mockClear();
+
+		/** @type {(() => void | Promise<void>) | undefined} */
+		let updateRoute;
+		const previousStartViewTransition = Object.getOwnPropertyDescriptor(
+			document,
+			'startViewTransition',
+		);
+		Object.defineProperty(document, 'startViewTransition', {
+			configurable: true,
+			value: vi.fn((update) => {
+				updateRoute = update;
+				return {};
+			}),
+		});
+
+		await navigate('/suspending', { viewTransition: true });
+		expect(document.startViewTransition).toHaveBeenCalledOnce();
+		expect(screen.getByText('User page 123')).toBeInTheDocument();
+		expect(route.params).toEqual({ id: '123' });
+		expect(userPageParamsMock).not.toHaveBeenCalled();
+
+		await updateRoute?.();
+		outsideState.count++;
+		await waitFor(() => {
+			expect(screen.getByText('Suspending Page')).toBeInTheDocument();
+		});
+		expect(userPageParamsMock).not.toHaveBeenCalled();
+		expect(route.params).toEqual({});
+
+		if (previousStartViewTransition) {
+			Object.defineProperty(document, 'startViewTransition', previousStartViewTransition);
+		}
 	});
 
 	it('should show active page', async () => {

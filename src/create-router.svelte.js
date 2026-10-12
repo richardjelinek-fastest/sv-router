@@ -1,10 +1,12 @@
 import { BROWSER, DEV } from 'esm-env';
+import { flushSync, tick } from 'svelte';
 import { isActive } from './helpers/is-active.js';
 import { matchRoute } from './helpers/match-route.js';
 import { preload, preloadOnHover } from './helpers/preload.js';
 import {
 	constructPath,
 	constructUrl,
+	getSharedLength,
 	join,
 	parseSearch,
 	resolveRouteComponents,
@@ -320,16 +322,28 @@ export async function onNavigate(path, options = {}) {
 		syncSearchParams(globalThis.location.search);
 	}
 
-	if (options.viewTransition && document.startViewTransition !== undefined) {
-		document.startViewTransition(() => {
-			componentTree.value = routeComponents;
-		});
-	} else {
+	const updateRoute = () => {
+		if (signal.aborted) return;
+		// Remove departing components before publishing the next route's params. For view
+		// transitions, this runs after the browser has captured the outgoing DOM.
+		const sharedLength = getSharedLength(componentTree.value, routeComponents);
+		if (sharedLength < componentTree.value.length) {
+			flushSync(() => {
+				componentTree.value = componentTree.value.slice(0, sharedLength);
+			});
+		}
 		componentTree.value = routeComponents;
+		params.value = newParams;
+		meta.value = newMeta;
+		Object.assign(location, updatedLocation());
+		return tick();
+	};
+
+	if (options.viewTransition && document.startViewTransition !== undefined) {
+		document.startViewTransition(updateRoute);
+	} else {
+		updateRoute();
 	}
-	params.value = newParams;
-	meta.value = newMeta;
-	Object.assign(location, updatedLocation());
 
 	if (options.scrollToTop !== false) {
 		window.scrollTo({ top: 0, left: 0, behavior: options.scrollToTop });
